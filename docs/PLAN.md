@@ -2,7 +2,7 @@
 
 ## Milestones
 - [x] 0. chore/project-setup
-- [ ] 1. feat/core-clock-search
+- [x] 1. feat/core-clock-search
 - [ ] 2. feat/links
 - [ ] 3. feat/scene-engine-themes
 - [ ] 4. feat/settings-effects
