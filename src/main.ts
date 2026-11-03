@@ -6,6 +6,7 @@ import { formatTime } from './features/clock/timeOfDay';
 import { greetingText } from './features/clock/greeting';
 import { searchUrl } from './features/search/engines';
 import { t } from './i18n';
+import { addLink, removeLink, updateLink, moveLink } from './features/links/links';
 
 const config = loadConfig();
 
@@ -13,7 +14,6 @@ function applyTheme(): void {
   document.body.dataset.theme = config.theme;
   document.documentElement.lang = config.language;
 }
-
 applyTheme();
 
 const app = document.querySelector<HTMLDivElement>('#app');
@@ -22,11 +22,13 @@ if (!app) throw new Error('app missing');
 const root = document.createElement('main');
 root.className = 'startpage';
 
+// Clock
 const clockEl = document.createElement('div');
 clockEl.className = 'clock';
 const greetingEl = document.createElement('div');
 greetingEl.className = 'greeting';
 
+// Search
 const searchForm = document.createElement('form');
 searchForm.className = 'search';
 const searchInput = document.createElement('input');
@@ -42,20 +44,101 @@ for (const e of ['duckduckgo', 'google', 'bing', 'brave']) {
 }
 engineSelect.value = config.searchEngine;
 searchForm.appendChild(engineSelect);
-
 searchForm.addEventListener('submit', (e) => {
   e.preventDefault();
   const q = searchInput.value.trim();
   if (!q) return;
   window.location.href = searchUrl(config.searchEngine, q);
 });
-
 engineSelect.addEventListener('change', () => {
   config.searchEngine = engineSelect.value as typeof config.searchEngine;
   saveConfig(config);
 });
 
-root.append(clockEl, greetingEl, searchForm);
+// Links
+const linksSection = document.createElement('section');
+linksSection.className = 'links';
+const linksTitle = document.createElement('h2');
+linksTitle.textContent = t(config.language, 'links');
+linksSection.appendChild(linksTitle);
+const linksList = document.createElement('ul');
+linksSection.appendChild(linksList);
+
+const addForm = document.createElement('form');
+addForm.className = 'add-link';
+const titleInput = document.createElement('input');
+titleInput.placeholder = 'Title';
+const urlInput = document.createElement('input');
+urlInput.type = 'url';
+urlInput.placeholder = 'https://...';
+const addBtn = document.createElement('button');
+addBtn.type = 'submit';
+addBtn.textContent = t(config.language, 'addLink');
+addForm.append(titleInput, urlInput, addBtn);
+linksSection.appendChild(addForm);
+
+function renderLinks(): void {
+  linksList.textContent = '';
+  config.links.forEach((link) => {
+    const li = document.createElement('li');
+    const a = document.createElement('a');
+    a.href = link.url;
+    a.textContent = link.title;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    li.appendChild(a);
+
+    const editBtn = document.createElement('button');
+    editBtn.textContent = '✎';
+    editBtn.addEventListener('click', () => {
+      const nt = prompt('Title', link.title);
+      const nu = prompt('URL', link.url);
+      if (nt !== null && nu !== null) {
+        if (updateLink(config, link.id, nt, nu)) renderLinks();
+        else alert('Invalid');
+      }
+    });
+
+    const delBtn = document.createElement('button');
+    delBtn.textContent = '×';
+    delBtn.addEventListener('click', () => {
+      removeLink(config, link.id);
+      renderLinks();
+    });
+
+    const upBtn = document.createElement('button');
+    upBtn.textContent = '↑';
+    upBtn.addEventListener('click', () => {
+      moveLink(config, link.id, -1);
+      renderLinks();
+    });
+
+    const downBtn = document.createElement('button');
+    downBtn.textContent = '↓';
+    downBtn.addEventListener('click', () => {
+      moveLink(config, link.id, 1);
+      renderLinks();
+    });
+
+    li.append(editBtn, delBtn, upBtn, downBtn);
+    linksList.appendChild(li);
+  });
+}
+
+addForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  if (addLink(config, titleInput.value, urlInput.value)) {
+    titleInput.value = '';
+    urlInput.value = '';
+    renderLinks();
+  } else {
+    alert('Invalid link');
+  }
+});
+
+renderLinks();
+
+root.append(clockEl, greetingEl, searchForm, linksSection);
 app.appendChild(root);
 
 function tick(): void {
