@@ -7,6 +7,9 @@ import { greetingText } from './features/clock/greeting';
 import { searchUrl } from './features/search/engines';
 import { t } from './i18n';
 import { addLink, removeLink, updateLink, moveLink } from './features/links/links';
+import { SceneEngine } from './scene/engine';
+import { scenes, getScene } from './scene/scenes';
+import { getTimeOfDay } from './features/clock/timeOfDay';
 
 const config = loadConfig();
 
@@ -138,13 +141,76 @@ addForm.addEventListener('submit', (e) => {
 
 renderLinks();
 
-root.append(clockEl, greetingEl, searchForm, linksSection);
+// Canvas scene
+const canvas = document.createElement('canvas');
+canvas.width = 320;
+canvas.height = 180;
+canvas.className = 'scene-canvas';
+const engine = new SceneEngine(canvas);
+
+const controls = document.createElement('div');
+controls.className = 'controls';
+const themeSelect = document.createElement('select');
+for (const t of ['cafe', 'forest', 'lavender', 'night']) {
+  const o = document.createElement('option');
+  o.value = t;
+  o.textContent = t;
+  themeSelect.appendChild(o);
+}
+themeSelect.value = config.theme;
+themeSelect.addEventListener('change', () => {
+  config.theme = themeSelect.value as typeof config.theme;
+  applyTheme();
+  saveConfig(config);
+});
+const sceneSelect = document.createElement('select');
+const autoOpt = document.createElement('option');
+autoOpt.value = 'auto';
+autoOpt.textContent = 'auto';
+sceneSelect.appendChild(autoOpt);
+for (const s of scenes) {
+  const o = document.createElement('option');
+  o.value = s.id;
+  o.textContent = s.name;
+  sceneSelect.appendChild(o);
+}
+sceneSelect.value = config.scene;
+controls.append(themeSelect, sceneSelect);
+root.append(canvas, controls, clockEl, greetingEl, searchForm, linksSection);
 app.appendChild(root);
+
+function resolveScene() {
+  const tod = getTimeOfDay(new Date().getHours());
+  engine.setTimeOfDay(tod);
+  let sc;
+  if (config.scene === 'auto') {
+    const id = tod === 'night' ? 'starry' : tod === 'day' ? 'garden' : 'cabin';
+    sc = getScene(id);
+  } else {
+    sc = getScene(config.scene);
+  }
+  if (sc) engine.setScene(sc);
+}
+
+sceneSelect.addEventListener('change', () => {
+  config.scene = sceneSelect.value;
+  saveConfig(config);
+  resolveScene();
+});
+
+// reduced motion
+const rm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+engine.setReducedMotion(rm);
+
+resolveScene();
+engine.start();
 
 function tick(): void {
   const now = new Date();
   clockEl.textContent = formatTime(now, config.clockFormat);
   greetingEl.textContent = greetingText(now.getHours(), config.name, config.language);
+  engine.setTimeOfDay(getTimeOfDay(now.getHours()));
+  if (config.scene === 'auto') resolveScene();
 }
 tick();
 setInterval(tick, 1000);
