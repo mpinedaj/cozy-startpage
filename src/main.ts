@@ -8,7 +8,7 @@ import { searchUrl } from './features/search/engines';
 import { t } from './i18n';
 import { addLink, removeLink, updateLink, moveLink } from './features/links/links';
 import { SceneEngine } from './scene/engine';
-import { scenes, getScene } from './scene/scenes';
+import { scenes, getScene, autoScene } from './scene/scenes';
 import { getTimeOfDay } from './features/clock/timeOfDay';
 
 const config = loadConfig();
@@ -161,7 +161,9 @@ themeSelect.value = config.theme;
 themeSelect.addEventListener('change', () => {
   config.theme = themeSelect.value as typeof config.theme;
   applyTheme();
+  engine.setTheme(config.theme);
   saveConfig(config);
+  resolveScene();
 });
 const sceneSelect = document.createElement('select');
 const autoOpt = document.createElement('option');
@@ -182,15 +184,21 @@ app.appendChild(root);
 function resolveScene() {
   const tod = getTimeOfDay(new Date().getHours());
   engine.setTimeOfDay(tod);
-  let sc;
-  if (config.scene === 'auto') {
-    const id = tod === 'night' ? 'starry' : tod === 'day' ? 'garden' : 'cabin';
-    sc = getScene(id);
-  } else {
-    sc = getScene(config.scene);
-  }
-  if (sc) engine.setScene(sc);
+  engine.setTheme(config.theme);
+  const sc = config.scene === 'auto' ? autoScene(config.theme) : getScene(config.scene);
+  engine.setScene(sc);
 }
+
+// Integer scaling: the 320x180 buffer is only ever scaled by whole numbers,
+// so every canvas pixel maps to an exact square on screen.
+function fitCanvas(): void {
+  const available = Math.min(window.innerWidth - 32, 960);
+  const scale = Math.max(1, Math.floor(available / 320));
+  canvas.style.width = `${320 * scale}px`;
+  canvas.style.height = `${180 * scale}px`;
+}
+window.addEventListener('resize', fitCanvas);
+fitCanvas();
 
 sceneSelect.addEventListener('change', () => {
   config.scene = sceneSelect.value;
@@ -210,7 +218,6 @@ function tick(): void {
   clockEl.textContent = formatTime(now, config.clockFormat);
   greetingEl.textContent = greetingText(now.getHours(), config.name, config.language);
   engine.setTimeOfDay(getTimeOfDay(now.getHours()));
-  if (config.scene === 'auto') resolveScene();
 }
 tick();
 setInterval(tick, 1000);

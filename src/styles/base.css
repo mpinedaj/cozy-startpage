@@ -31,11 +31,105 @@ button, input, select, textarea {
   outline-offset: 2px;
 }
 
+.startpage {
+  width: min(100%, 1000px);
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
 .scene-canvas {
-  width: 100%;
-  max-width: 640px;
-  height: auto;
+  display: block;
+  box-sizing: content-box;
+  image-rendering: crisp-edges;
   image-rendering: pixelated;
   border: 4px solid var(--fg);
-  box-shadow: 4px 4px 0 var(--shadow);
+  box-shadow: 6px 6px 0 var(--shadow);
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.clock {
+  font-size: clamp(3rem, 10vw, 6rem);
+  line-height: 0.9;
+  letter-spacing: 0.04em;
+}
+
+.greeting {
+  font-size: clamp(1.25rem, 3vw, 2rem);
+}
+
+.search,
+.add-link {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: min(100%, 640px);
+}
+
+.search input {
+  flex: 1 1 240px;
+}
+
+.links {
+  width: min(100%, 640px);
+}
+
+.links ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 8px 0 12px;
+}
+
+.links li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.links li a {
+  flex: 1;
+  color: var(--fg);
+  text-decoration: none;
+  border-bottom: 2px solid var(--accent);
+  padding: 2px 0;
+}
+
+.links li a:hover {
+  background: var(--muted);
+}
+
+input,
+select,
+button {
+  background: var(--bg);
+  color: var(--fg);
+  border: 2px solid var(--fg);
+  padding: 6px 8px;
+  box-shadow: 3px 3px 0 var(--shadow);
+  font-size: 1rem;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--muted);
+}
+
+button:active {
+  transform: translate(3px, 3px);
+  box-shadow: none;
 }
