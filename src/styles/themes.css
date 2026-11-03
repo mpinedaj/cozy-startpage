@@ -1,32 +1,56 @@
+/*
+ * Every theme is built from exactly four named colors: cream, coffee, moss, rose.
+ * The scene palette in src/scene/palette.ts mirrors these values.
+ */
 :root,
 [data-theme='cafe'] {
-  --bg: #f4e9d8;
-  --fg: #5b3a29;
-  --accent: #6b8f71;
-  --muted: #e8a7a0;
-  --shadow: #5b3a29;
+  --cream: #f4e9d8;
+  --coffee: #5b3a29;
+  --moss: #6b8f71;
+  --rose: #e8a7a0;
+
+  --bg: var(--cream);
+  --fg: var(--coffee);
+  --accent: var(--moss);
+  --muted: var(--rose);
+  --shadow: var(--coffee);
 }
 
 [data-theme='forest'] {
-  --bg: #dce9d6;
-  --fg: #2f4a33;
-  --accent: #6b8f71;
-  --muted: #a7c4a0;
-  --shadow: #2f4a33;
+  --cream: #e8f0e4;
+  --coffee: #2f4a33;
+  --moss: #6b8f71;
+  --rose: #c98b84;
+
+  --bg: var(--cream);
+  --fg: var(--coffee);
+  --accent: var(--moss);
+  --muted: var(--rose);
+  --shadow: var(--coffee);
 }
 
 [data-theme='lavender'] {
-  --bg: #eee6f5;
-  --fg: #4a3a5b;
-  --accent: #a79bc4;
-  --muted: #e8a7d8;
-  --shadow: #4a3a5b;
+  --cream: #f0e8f7;
+  --coffee: #4a3a5b;
+  --moss: #8a7fa8;
+  --rose: #d9a7cf;
+
+  --bg: var(--cream);
+  --fg: var(--coffee);
+  --accent: var(--moss);
+  --muted: var(--rose);
+  --shadow: var(--coffee);
 }
 
 [data-theme='night'] {
-  --bg: #1a1a2e;
-  --fg: #e8e0d8;
-  --accent: #e8a7a0;
-  --muted: #6b8f71;
-  --shadow: #000000;
+  --cream: #e8e0d8;
+  --coffee: #12121f;
+  --moss: #3a4a5b;
+  --rose: #e8a7a0;
+
+  --bg: var(--coffee);
+  --fg: var(--cream);
+  --accent: var(--moss);
+  --muted: var(--rose);
+  --shadow: var(--coffee);
 }
