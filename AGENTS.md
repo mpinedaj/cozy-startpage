@@ -1,0 +1,37 @@
+# AGENTS.md — cozy-startpage
+
+## Project
+Customizable browser start page / new-tab page with a cozy pixel-art look. No backend, no analytics, no tracking, no accounts. Hosted on GitHub Pages.
+
+## Stack
+- Vite + TypeScript (vanilla-ts), strict mode, ES modules. No frameworks.
+- DOM for UI, single low-res `<canvas>` (320x180) scaled with integer scaling + `image-rendering: pixelated`.
+- Plain CSS with custom properties. Themes via `data-theme` on `<body>`. Pixel shadows, `border-radius: 0`.
+- Pixelify Sans self-hosted via `@fontsource/pixelify-sans`.
+- Storage: `localStorage`, one versioned key, wrapped in try/catch.
+- Optional weather: Open-Meteo (no API key).
+- Tooling: ESLint (typescript-eslint), Prettier, Vitest, Playwright, GitHub Actions.
+
+## Commands
+- `npm run dev` — dev server
+- `npm run typecheck` — `tsc --noEmit`
+- `npm run lint` — eslint
+- `npm run test` — vitest run
+- `npm run build` — tsc && vite build
+- `npm run e2e` — playwright test
+- `npm run format` — prettier write
+
+## Quality gates (all must pass before every PR)
+`npm run typecheck`, `npm run lint`, `npm run test`, `npm run build`.
+
+## Conventions
+- Never commit/push directly to `main`. One branch per milestone.
+- Conventional Commits.
+- No `any`. No dead code. No unnecessary deps (justify in docs/DECISIONS.md).
+- Never insert user data with innerHTML (use textContent/DOM APIs).
+- Sanitize link URLs (http/https only).
+- Validate imported JSON.
+- Pixel art created in code or original; credit third-party assets.
+
+## Structure
+`src/core`, `src/features`, `src/scene`, `src/ui`, `src/i18n`, `src/styles`.
