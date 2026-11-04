@@ -5,8 +5,9 @@ import { loadConfig, saveConfig } from './core/storage';
 import { formatTime, getTimeOfDay } from './features/clock/timeOfDay';
 import { greetingText } from './features/clock/greeting';
 import { searchUrl } from './features/search/engines';
-import { t } from './i18n';
+import { t, type MessageKey } from './i18n';
 import { addLink, removeLink, updateLink, moveLink } from './features/links/links';
+import { prefersReducedMotion } from './features/settings/motion';
 import { SceneEngine } from './scene/engine';
 import { scenes, getScene, autoScene } from './scene/scenes';
 
@@ -14,7 +15,6 @@ const config = loadConfig();
 
 function applyTheme(): void {
   document.body.dataset.theme = config.theme;
-  document.documentElement.lang = config.language;
 }
 applyTheme();
 
@@ -25,11 +25,47 @@ const root = document.createElement('main');
 root.className = 'startpage';
 
 // ---------------------------------------------------------------------------
+// Localisation helpers
+// ---------------------------------------------------------------------------
+function setText(el: HTMLElement, key: MessageKey): void {
+  el.dataset.i18n = key;
+  el.textContent = t(config.language, key);
+}
+
+function setPlaceholder(el: HTMLInputElement, key: MessageKey): void {
+  el.dataset.i18nPlaceholder = key;
+  el.placeholder = t(config.language, key);
+}
+
+function setAriaLabel(el: Element, key: MessageKey): void {
+  el.setAttribute('data-i18n-aria', key);
+  el.setAttribute('aria-label', t(config.language, key));
+}
+
+function applyLanguage(): void {
+  document.documentElement.lang = config.language;
+  document.querySelectorAll<HTMLElement>('[data-i18n]').forEach((el) => {
+    const key = el.dataset.i18n as MessageKey | undefined;
+    if (key) el.textContent = t(config.language, key);
+  });
+  document.querySelectorAll<HTMLInputElement>('[data-i18n-placeholder]').forEach((el) => {
+    const key = el.dataset.i18nPlaceholder as MessageKey | undefined;
+    if (key) el.placeholder = t(config.language, key);
+  });
+  document.querySelectorAll<HTMLElement>('[data-i18n-aria]').forEach((el) => {
+    const key = el.dataset.i18nAria as MessageKey | undefined;
+    if (key) el.setAttribute('aria-label', t(config.language, key));
+  });
+  renderLinks();
+  updateClock();
+}
+
+// ---------------------------------------------------------------------------
 // Hero: clock, greeting, search
 // ---------------------------------------------------------------------------
 const hero = document.createElement('section');
 hero.className = 'hero';
-hero.setAttribute('aria-label', 'Clock and search');
+setAriaLabel(hero, 'heroLabel');
 
 const clockEl = document.createElement('div');
 clockEl.className = 'clock';
@@ -44,12 +80,12 @@ searchForm.setAttribute('role', 'search');
 
 const searchInput = document.createElement('input');
 searchInput.type = 'search';
-searchInput.placeholder = t(config.language, 'searchPlaceholder');
-searchInput.setAttribute('aria-label', 'Search query');
+setPlaceholder(searchInput, 'searchPlaceholder');
+setAriaLabel(searchInput, 'searchQuery');
 searchForm.appendChild(searchInput);
 
 const engineSelect = document.createElement('select');
-engineSelect.setAttribute('aria-label', 'Search engine');
+setAriaLabel(engineSelect, 'searchEngineLabel');
 for (const e of ['duckduckgo', 'google', 'bing', 'brave']) {
   const o = document.createElement('option');
   o.value = e;
@@ -81,7 +117,7 @@ linksSection.setAttribute('aria-labelledby', 'links-title');
 
 const linksTitle = document.createElement('h2');
 linksTitle.id = 'links-title';
-linksTitle.textContent = t(config.language, 'links');
+setText(linksTitle, 'links');
 linksSection.appendChild(linksTitle);
 
 const linksList = document.createElement('ul');
@@ -92,17 +128,17 @@ const addForm = document.createElement('form');
 addForm.className = 'add-link';
 
 const titleInput = document.createElement('input');
-titleInput.placeholder = 'Title';
-titleInput.setAttribute('aria-label', 'Link title');
+setPlaceholder(titleInput, 'linkTitle');
+setAriaLabel(titleInput, 'linkTitle');
 
 const urlInput = document.createElement('input');
 urlInput.type = 'url';
-urlInput.placeholder = 'https://...';
-urlInput.setAttribute('aria-label', 'Link URL');
+setPlaceholder(urlInput, 'linkUrl');
+setAriaLabel(urlInput, 'linkUrlLabel');
 
 const addBtn = document.createElement('button');
 addBtn.type = 'submit';
-addBtn.textContent = t(config.language, 'addLink');
+setText(addBtn, 'addLink');
 
 addForm.append(titleInput, urlInput, addBtn);
 linksSection.appendChild(addForm);
@@ -121,21 +157,21 @@ function renderLinks(): void {
 
     const editBtn = document.createElement('button');
     editBtn.type = 'button';
-    editBtn.textContent = 'edit';
-    editBtn.setAttribute('aria-label', `Edit ${link.title}`);
+    editBtn.textContent = t(config.language, 'edit');
+    editBtn.setAttribute('aria-label', `${t(config.language, 'edit')} ${link.title}`);
     editBtn.addEventListener('click', () => {
-      const nt = prompt('Title', link.title);
-      const nu = prompt('URL', link.url);
+      const nt = prompt(t(config.language, 'linkTitle'), link.title);
+      const nu = prompt(t(config.language, 'linkUrlLabel'), link.url);
       if (nt !== null && nu !== null) {
         if (updateLink(config, link.id, nt, nu)) renderLinks();
-        else alert('Invalid');
+        else alert(t(config.language, 'invalidLink'));
       }
     });
 
     const delBtn = document.createElement('button');
     delBtn.type = 'button';
     delBtn.textContent = '×';
-    delBtn.setAttribute('aria-label', `Delete ${link.title}`);
+    delBtn.setAttribute('aria-label', `${t(config.language, 'delete')} ${link.title}`);
     delBtn.addEventListener('click', () => {
       removeLink(config, link.id);
       renderLinks();
@@ -144,7 +180,7 @@ function renderLinks(): void {
     const upBtn = document.createElement('button');
     upBtn.type = 'button';
     upBtn.textContent = '↑';
-    upBtn.setAttribute('aria-label', `Move ${link.title} up`);
+    upBtn.setAttribute('aria-label', `${t(config.language, 'moveUp')} ${link.title}`);
     upBtn.addEventListener('click', () => {
       moveLink(config, link.id, -1);
       renderLinks();
@@ -153,7 +189,7 @@ function renderLinks(): void {
     const downBtn = document.createElement('button');
     downBtn.type = 'button';
     downBtn.textContent = '↓';
-    downBtn.setAttribute('aria-label', `Move ${link.title} down`);
+    downBtn.setAttribute('aria-label', `${t(config.language, 'moveDown')} ${link.title}`);
     downBtn.addEventListener('click', () => {
       moveLink(config, link.id, 1);
       renderLinks();
@@ -171,18 +207,16 @@ addForm.addEventListener('submit', (e) => {
     urlInput.value = '';
     renderLinks();
   } else {
-    alert('Invalid link');
+    alert(t(config.language, 'invalidLink'));
   }
 });
-
-renderLinks();
 
 // ---------------------------------------------------------------------------
 // Sidebar: compact scene widget + reserved slots for phase 2
 // ---------------------------------------------------------------------------
 const sidebar = document.createElement('aside');
 sidebar.className = 'sidebar';
-sidebar.setAttribute('aria-label', 'Dashboard widgets');
+setAriaLabel(sidebar, 'widgetsLabel');
 
 const sceneCard = document.createElement('figure');
 sceneCard.className = 'scene-card';
@@ -192,7 +226,7 @@ canvas.width = 320;
 canvas.height = 180;
 canvas.className = 'scene-canvas';
 canvas.setAttribute('role', 'img');
-canvas.setAttribute('aria-label', 'Cozy pixel scene');
+setAriaLabel(canvas, 'sceneAlt');
 
 const engine = new SceneEngine(canvas);
 
@@ -202,19 +236,19 @@ sceneControls.className = 'scene-controls';
 const themeLabel = document.createElement('label');
 themeLabel.className = 'sr-only';
 themeLabel.htmlFor = 'theme-select';
-themeLabel.textContent = 'Theme';
+setText(themeLabel, 'themeLabel');
 
 const themeSelect = document.createElement('select');
 themeSelect.id = 'theme-select';
-for (const theme of [
-  ['cafe', 'Cafe'],
-  ['forest', 'Forest'],
-  ['lavender', 'Lavender'],
-  ['night', 'Night'],
+for (const [value, key] of [
+  ['cafe', 'themeCafe'],
+  ['forest', 'themeForest'],
+  ['lavender', 'themeLavender'],
+  ['night', 'themeNight'],
 ] as const) {
   const o = document.createElement('option');
-  o.value = theme[0];
-  o.textContent = theme[1];
+  o.value = value;
+  setText(o, key);
   themeSelect.appendChild(o);
 }
 themeSelect.value = config.theme;
@@ -228,18 +262,27 @@ themeSelect.addEventListener('change', () => {
 const sceneLabel = document.createElement('label');
 sceneLabel.className = 'sr-only';
 sceneLabel.htmlFor = 'scene-select';
-sceneLabel.textContent = 'Scene';
+setText(sceneLabel, 'sceneLabel');
+
+const sceneKeys: Record<string, MessageKey> = {
+  mug: 'sceneMug',
+  tree: 'sceneTree',
+  candle: 'sceneCandle',
+  moon: 'sceneMoon',
+};
 
 const sceneSelect = document.createElement('select');
 sceneSelect.id = 'scene-select';
 const autoOpt = document.createElement('option');
 autoOpt.value = 'auto';
-autoOpt.textContent = 'Auto';
+setText(autoOpt, 'auto');
 sceneSelect.appendChild(autoOpt);
 for (const s of scenes) {
   const o = document.createElement('option');
   o.value = s.id;
-  o.textContent = s.name;
+  const key = sceneKeys[s.id];
+  if (key) setText(o, key);
+  else o.textContent = s.name;
   sceneSelect.appendChild(o);
 }
 sceneSelect.value = config.scene;
@@ -252,31 +295,204 @@ sceneSelect.addEventListener('change', () => {
 sceneControls.append(themeLabel, themeSelect, sceneLabel, sceneSelect);
 sceneCard.append(canvas, sceneControls);
 
-function createWidgetSlot(title: string, description: string): HTMLElement {
+function createWidgetSlot(
+  id: string,
+  titleKey: MessageKey,
+  descriptionKey: MessageKey,
+): HTMLElement {
   const section = document.createElement('section');
   section.className = 'widget-slot';
-  section.setAttribute('aria-label', `${title} widget placeholder`);
 
   const heading = document.createElement('h2');
-  heading.textContent = title;
+  heading.id = `widget-${id}-title`;
+  section.setAttribute('aria-labelledby', heading.id);
+  setText(heading, titleKey);
+
   const copy = document.createElement('p');
-  copy.textContent = description;
+  setText(copy, descriptionKey);
 
   section.append(heading, copy);
   return section;
 }
 
+const settingsBtn = document.createElement('button');
+settingsBtn.type = 'button';
+settingsBtn.className = 'settings-open';
+setText(settingsBtn, 'settings');
+settingsBtn.setAttribute('aria-haspopup', 'dialog');
+settingsBtn.setAttribute('aria-controls', 'settings-dialog');
+
+const sidebarTools = document.createElement('div');
+sidebarTools.className = 'sidebar-tools';
+sidebarTools.append(settingsBtn);
+
 sidebar.append(
+  sidebarTools,
   sceneCard,
-  createWidgetSlot('Weather', 'A calm forecast will live here.'),
-  createWidgetSlot('To-do', 'A short list for the day will live here.'),
+  createWidgetSlot('weather', 'weather', 'weatherDescription'),
+  createWidgetSlot('tasks', 'tasks', 'tasksDescription'),
 );
 
+// ---------------------------------------------------------------------------
+// Settings dialog
+// ---------------------------------------------------------------------------
+const settingsDialog = document.createElement('dialog');
+settingsDialog.className = 'settings-dialog';
+settingsDialog.id = 'settings-dialog';
+settingsDialog.setAttribute('aria-labelledby', 'settings-title');
+
+const settingsForm = document.createElement('form');
+settingsForm.className = 'settings-form';
+settingsForm.method = 'dialog';
+
+const settingsHeader = document.createElement('header');
+settingsHeader.className = 'settings-header';
+
+const settingsTitle = document.createElement('h2');
+settingsTitle.id = 'settings-title';
+setText(settingsTitle, 'settings');
+
+const settingsClose = document.createElement('button');
+settingsClose.type = 'submit';
+settingsClose.className = 'dialog-close';
+settingsClose.textContent = '×';
+setAriaLabel(settingsClose, 'close');
+
+settingsHeader.append(settingsTitle, settingsClose);
+
+function createField(
+  labelKey: MessageKey,
+  control: HTMLInputElement | HTMLSelectElement,
+): HTMLDivElement {
+  const field = document.createElement('div');
+  field.className = 'field';
+  const label = document.createElement('label');
+  label.htmlFor = control.id;
+  setText(label, labelKey);
+  field.append(label, control);
+  return field;
+}
+
+const nameInput = document.createElement('input');
+nameInput.id = 'setting-name';
+nameInput.type = 'text';
+nameInput.maxLength = 32;
+nameInput.autocomplete = 'off';
+nameInput.value = config.name;
+setPlaceholder(nameInput, 'namePlaceholder');
+nameInput.addEventListener('input', () => {
+  config.name = nameInput.value;
+  saveConfig(config);
+  updateClock();
+});
+
+const languageSelect = document.createElement('select');
+languageSelect.id = 'setting-language';
+for (const [value, label] of [
+  ['en', 'English'],
+  ['es', 'Español'],
+] as const) {
+  const o = document.createElement('option');
+  o.value = value;
+  o.textContent = label;
+  languageSelect.appendChild(o);
+}
+languageSelect.value = config.language;
+languageSelect.addEventListener('change', () => {
+  config.language = languageSelect.value as typeof config.language;
+  saveConfig(config);
+  applyLanguage();
+});
+
+const clockSelect = document.createElement('select');
+clockSelect.id = 'setting-clock';
+for (const [value, key] of [
+  ['24', 'clock24'],
+  ['12', 'clock12'],
+] as const) {
+  const o = document.createElement('option');
+  o.value = value;
+  setText(o, key);
+  clockSelect.appendChild(o);
+}
+clockSelect.value = config.clockFormat;
+clockSelect.addEventListener('change', () => {
+  config.clockFormat = clockSelect.value as typeof config.clockFormat;
+  saveConfig(config);
+  updateClock();
+});
+
+const effectsInput = document.createElement('input');
+effectsInput.id = 'setting-effects';
+effectsInput.type = 'checkbox';
+effectsInput.checked = config.effects;
+
+const effectsField = document.createElement('div');
+effectsField.className = 'field';
+const effectsRow = document.createElement('label');
+effectsRow.className = 'checkbox-row';
+effectsRow.htmlFor = effectsInput.id;
+const effectsText = document.createElement('span');
+setText(effectsText, 'effectsLabel');
+effectsRow.append(effectsInput, effectsText);
+const effectsHint = document.createElement('p');
+effectsHint.className = 'hint';
+setText(effectsHint, 'effectsHint');
+effectsField.append(effectsRow, effectsHint);
+
+effectsInput.addEventListener('change', () => {
+  config.effects = effectsInput.checked;
+  saveConfig(config);
+  engine.setEffects(config.effects);
+});
+
+const motionSelect = document.createElement('select');
+motionSelect.id = 'setting-motion';
+for (const [value, key] of [
+  ['system', 'motionSystem'],
+  ['on', 'motionOn'],
+  ['off', 'motionOff'],
+] as const) {
+  const o = document.createElement('option');
+  o.value = value;
+  setText(o, key);
+  motionSelect.appendChild(o);
+}
+motionSelect.value = config.reducedMotion;
+motionSelect.addEventListener('change', () => {
+  config.reducedMotion = motionSelect.value as typeof config.reducedMotion;
+  saveConfig(config);
+  applyMotion();
+});
+
+const settingsActions = document.createElement('div');
+settingsActions.className = 'settings-actions';
+const doneBtn = document.createElement('button');
+doneBtn.type = 'submit';
+setText(doneBtn, 'done');
+settingsActions.append(doneBtn);
+
+settingsForm.append(
+  settingsHeader,
+  createField('nameLabel', nameInput),
+  createField('languageLabel', languageSelect),
+  createField('clockLabel', clockSelect),
+  effectsField,
+  createField('motionLabel', motionSelect),
+  settingsActions,
+);
+settingsDialog.appendChild(settingsForm);
+
+settingsBtn.addEventListener('click', () => {
+  if (!settingsDialog.open) settingsDialog.showModal();
+});
+
 root.append(hero, linksSection, sidebar);
-app.appendChild(root);
+app.append(root);
+document.body.append(settingsDialog);
 
 // ---------------------------------------------------------------------------
-// Scene selection and clock
+// Scene selection, motion preference and clock
 // ---------------------------------------------------------------------------
 function resolveScene(): void {
   const tod = getTimeOfDay(new Date().getHours());
@@ -286,17 +502,28 @@ function resolveScene(): void {
   engine.setScene(sc);
 }
 
-const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-engine.setReducedMotion(reducedMotion);
+const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+function applyMotion(): void {
+  const reduced = prefersReducedMotion(config.reducedMotion, motionQuery.matches);
+  engine.setReducedMotion(reduced);
+  if (!reduced && !document.hidden) engine.start();
+}
+
+motionQuery.addEventListener('change', () => {
+  if (config.reducedMotion === 'system') applyMotion();
+});
 
 resolveScene();
-engine.start();
+engine.setEffects(config.effects);
+applyMotion();
 
-function tick(): void {
+function updateClock(): void {
   const now = new Date();
   clockEl.textContent = formatTime(now, config.clockFormat);
   greetingEl.textContent = greetingText(now.getHours(), config.name, config.language);
   engine.setTimeOfDay(getTimeOfDay(now.getHours()));
 }
-tick();
-setInterval(tick, 1000);
+
+applyLanguage();
+setInterval(updateClock, 1000);
