@@ -620,7 +620,11 @@ settingsBtn.addEventListener('click', () => {
   if (!settingsDialog.open) settingsDialog.showModal();
 });
 
-root.append(hero, linksSection, sidebar);
+const pageTitle = document.createElement('h1');
+pageTitle.className = 'sr-only';
+pageTitle.textContent = 'cozy startpage';
+
+root.append(pageTitle, hero, linksSection, sidebar);
 app.append(root);
 document.body.append(settingsDialog);
 

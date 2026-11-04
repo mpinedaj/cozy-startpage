@@ -230,12 +230,12 @@ textarea {
 
 .widget-meta {
   font-size: 0.85rem;
-  opacity: 0.7;
+  opacity: 0.85;
 }
 
 .widget-empty {
   font-size: 0.9rem;
-  opacity: 0.75;
+  opacity: 0.85;
 }
 
 /* Tasks */
@@ -266,7 +266,7 @@ textarea {
 }
 
 .task-done .task-check span {
-  opacity: 0.6;
+  opacity: 0.8;
   text-decoration: line-through;
 }
 
@@ -423,7 +423,7 @@ input[type='checkbox']:checked {
 
 .hint {
   font-size: 0.85rem;
-  opacity: 0.7;
+  opacity: 0.85;
 }
 
 .settings-actions {

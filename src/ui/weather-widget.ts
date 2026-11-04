@@ -54,6 +54,7 @@ export function createWeatherWidget(config: Config): WeatherWidget {
 
   const message = document.createElement('p');
   message.className = 'widget-empty';
+  message.setAttribute('aria-live', 'polite');
 
   const retry = document.createElement('button');
   retry.type = 'button';

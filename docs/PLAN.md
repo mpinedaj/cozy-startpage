@@ -8,7 +8,7 @@
 - [x] 3. feat/scene-engine-themes
 - [x] 4. feat/settings-effects
 - [x] 5. feat/extras
-- [ ] 6. chore/polish-release
+- [x] 6. chore/polish-release
 
 ## Milestone 0 tasks
 
@@ -26,3 +26,11 @@
 - [x] Config export to JSON
 - [x] Config import with validation and version guard
 - [x] EN/ES strings for both widgets and backup
+
+## Milestone 6 tasks
+
+- [x] Playwright e2e suite against the production build
+- [x] e2e job in CI, traces uploaded on failure
+- [x] README with screenshots, privacy notes and local setup
+- [x] Accessibility pass: page heading, weather live region, AA contrast for secondary text
+- [x] Version 1.0.0, changelog and release tag

@@ -41,3 +41,9 @@ Consequences: The first paint after enabling weather needs a network round trip 
 Context: Importing a JSON file is the easiest way to corrupt a config: unknown fields, wrong types, or a file written by a future version.
 Decision: `importConfig()` rejects malformed JSON, non-objects and files whose `version` is newer than `CONFIG_VERSION`, then hands the object to the same `migrate()` used for `localStorage`. The UI replaces the live config with the result and re-applies theme, scene, motion, language and widgets in one place.
 Consequences: A hand-edited file behaves exactly like old stored data: unknown fields are ignored and invalid links or tasks are filtered out. Import can never crash the page, and future migrations only have to be written once.
+
+## 0008 — End-to-end tests run against the production build
+
+Context: Unit tests cover the pure logic, but the settings dialog, the widgets and the storage wiring only exist in the DOM. Testing them against `vite dev` would exercise different module loading and CSS than what ships.
+Decision: Playwright starts `npm run build && npm run preview` (its `webServer` config) and drives the real bundle on port 4173. Third-party calls are mocked with `page.route`, so the suite never touches the network. Every test seeds a config into `localStorage`, reloads, then asserts both the UI and the stored value. CI runs the same command in a separate job.
+Consequences: The suite catches integration bugs that unit tests cannot (it found the file input being wiped by re-localisation), at the cost of one browser download in CI.
