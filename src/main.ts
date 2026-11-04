@@ -2,6 +2,8 @@ import './styles/base.css';
 import './styles/themes.css';
 import '@fontsource/pixelify-sans';
 import { loadConfig, saveConfig } from './core/storage';
+import { exportConfig, importConfig } from './core/portable';
+import type { Config } from './core/types';
 import { formatTime, getTimeOfDay } from './features/clock/timeOfDay';
 import { greetingText } from './features/clock/greeting';
 import { searchUrl } from './features/search/engines';
@@ -10,6 +12,8 @@ import { addLink, removeLink, updateLink, moveLink } from './features/links/link
 import { prefersReducedMotion } from './features/settings/motion';
 import { SceneEngine } from './scene/engine';
 import { scenes, getScene, autoScene } from './scene/scenes';
+import { createTasksWidget } from './ui/tasks-widget';
+import { createWeatherWidget } from './ui/weather-widget';
 
 const config = loadConfig();
 
@@ -57,6 +61,8 @@ function applyLanguage(): void {
     if (key) el.setAttribute('aria-label', t(config.language, key));
   });
   renderLinks();
+  tasksWidget.render(config.language);
+  weatherWidget.render(config.language);
   updateClock();
 }
 
@@ -212,7 +218,7 @@ addForm.addEventListener('submit', (e) => {
 });
 
 // ---------------------------------------------------------------------------
-// Sidebar: compact scene widget + reserved slots for phase 2
+// Sidebar: scene card, weather and to-do
 // ---------------------------------------------------------------------------
 const sidebar = document.createElement('aside');
 sidebar.className = 'sidebar';
@@ -295,25 +301,8 @@ sceneSelect.addEventListener('change', () => {
 sceneControls.append(themeLabel, themeSelect, sceneLabel, sceneSelect);
 sceneCard.append(canvas, sceneControls);
 
-function createWidgetSlot(
-  id: string,
-  titleKey: MessageKey,
-  descriptionKey: MessageKey,
-): HTMLElement {
-  const section = document.createElement('section');
-  section.className = 'widget-slot';
-
-  const heading = document.createElement('h2');
-  heading.id = `widget-${id}-title`;
-  section.setAttribute('aria-labelledby', heading.id);
-  setText(heading, titleKey);
-
-  const copy = document.createElement('p');
-  setText(copy, descriptionKey);
-
-  section.append(heading, copy);
-  return section;
-}
+const weatherWidget = createWeatherWidget(config);
+const tasksWidget = createTasksWidget(config);
 
 const settingsBtn = document.createElement('button');
 settingsBtn.type = 'button';
@@ -326,12 +315,7 @@ const sidebarTools = document.createElement('div');
 sidebarTools.className = 'sidebar-tools';
 sidebarTools.append(settingsBtn);
 
-sidebar.append(
-  sidebarTools,
-  sceneCard,
-  createWidgetSlot('weather', 'weather', 'weatherDescription'),
-  createWidgetSlot('tasks', 'tasks', 'tasksDescription'),
-);
+sidebar.append(sidebarTools, sceneCard, weatherWidget.element, tasksWidget.element);
 
 // ---------------------------------------------------------------------------
 // Settings dialog
@@ -371,6 +355,37 @@ function createField(
   setText(label, labelKey);
   field.append(label, control);
   return field;
+}
+
+function createCheckboxField(
+  id: string,
+  labelKey: MessageKey,
+  hintKey?: MessageKey,
+): { field: HTMLDivElement; input: HTMLInputElement } {
+  const input = document.createElement('input');
+  input.id = id;
+  input.type = 'checkbox';
+
+  const row = document.createElement('label');
+  row.className = 'checkbox-row';
+  row.htmlFor = id;
+
+  const text = document.createElement('span');
+  setText(text, labelKey);
+  row.append(input, text);
+
+  const field = document.createElement('div');
+  field.className = 'field';
+  field.append(row);
+
+  if (hintKey) {
+    const hint = document.createElement('p');
+    hint.className = 'hint';
+    setText(hint, hintKey);
+    field.append(hint);
+  }
+
+  return { field, input };
 }
 
 const nameInput = document.createElement('input');
@@ -422,26 +437,10 @@ clockSelect.addEventListener('change', () => {
   updateClock();
 });
 
-const effectsInput = document.createElement('input');
-effectsInput.id = 'setting-effects';
-effectsInput.type = 'checkbox';
-effectsInput.checked = config.effects;
-
-const effectsField = document.createElement('div');
-effectsField.className = 'field';
-const effectsRow = document.createElement('label');
-effectsRow.className = 'checkbox-row';
-effectsRow.htmlFor = effectsInput.id;
-const effectsText = document.createElement('span');
-setText(effectsText, 'effectsLabel');
-effectsRow.append(effectsInput, effectsText);
-const effectsHint = document.createElement('p');
-effectsHint.className = 'hint';
-setText(effectsHint, 'effectsHint');
-effectsField.append(effectsRow, effectsHint);
-
-effectsInput.addEventListener('change', () => {
-  config.effects = effectsInput.checked;
+const effectsToggle = createCheckboxField('setting-effects', 'effectsLabel', 'effectsHint');
+effectsToggle.input.checked = config.effects;
+effectsToggle.input.addEventListener('change', () => {
+  config.effects = effectsToggle.input.checked;
   saveConfig(config);
   engine.setEffects(config.effects);
 });
@@ -465,6 +464,137 @@ motionSelect.addEventListener('change', () => {
   applyMotion();
 });
 
+const weatherToggle = createCheckboxField('setting-weather', 'weatherEnableLabel');
+weatherToggle.input.checked = config.weather.enabled;
+weatherToggle.input.addEventListener('change', () => {
+  config.weather.enabled = weatherToggle.input.checked;
+  saveConfig(config);
+  weatherWidget.refresh();
+});
+
+const cityInput = document.createElement('input');
+cityInput.id = 'setting-city';
+cityInput.type = 'text';
+cityInput.maxLength = 64;
+cityInput.autocomplete = 'off';
+cityInput.value = config.weather.city;
+setPlaceholder(cityInput, 'weatherCityPlaceholder');
+cityInput.addEventListener('change', () => {
+  config.weather.city = cityInput.value.trim();
+  saveConfig(config);
+  weatherWidget.refresh();
+});
+
+const weatherGroup = document.createElement('div');
+weatherGroup.className = 'settings-group';
+
+const weatherHeading = document.createElement('h3');
+weatherHeading.className = 'settings-subtitle';
+setText(weatherHeading, 'weather');
+
+const weatherHint = document.createElement('p');
+weatherHint.className = 'hint';
+setText(weatherHint, 'weatherHint');
+
+weatherGroup.append(
+  weatherHeading,
+  weatherToggle.field,
+  createField('weatherCityLabel', cityInput),
+  weatherHint,
+);
+
+// ---------------------------------------------------------------------------
+// Backup: export and import the whole config as JSON
+// ---------------------------------------------------------------------------
+function applyConfig(next: Config): void {
+  Object.assign(config, next);
+  saveConfig(config);
+
+  nameInput.value = config.name;
+  languageSelect.value = config.language;
+  clockSelect.value = config.clockFormat;
+  effectsToggle.input.checked = config.effects;
+  motionSelect.value = config.reducedMotion;
+  weatherToggle.input.checked = config.weather.enabled;
+  cityInput.value = config.weather.city;
+  themeSelect.value = config.theme;
+  sceneSelect.value = config.scene;
+  engineSelect.value = config.searchEngine;
+
+  applyTheme();
+  engine.setEffects(config.effects);
+  resolveScene();
+  applyMotion();
+  applyLanguage();
+  weatherWidget.refresh();
+}
+
+const dataGroup = document.createElement('div');
+dataGroup.className = 'settings-group';
+
+const dataHeading = document.createElement('h3');
+dataHeading.className = 'settings-subtitle';
+setText(dataHeading, 'dataLabel');
+
+const dataHint = document.createElement('p');
+dataHint.className = 'hint';
+setText(dataHint, 'dataHint');
+
+const dataActions = document.createElement('div');
+dataActions.className = 'data-actions';
+
+const exportBtn = document.createElement('button');
+exportBtn.type = 'button';
+setText(exportBtn, 'exportConfig');
+exportBtn.addEventListener('click', () => {
+  const blob = new Blob([exportConfig(config)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `cozy-startpage-${new Date().toISOString().slice(0, 10)}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+});
+
+const importLabel = document.createElement('label');
+importLabel.className = 'file-button';
+
+const importText = document.createElement('span');
+setText(importText, 'importConfig');
+
+const importInput = document.createElement('input');
+importInput.type = 'file';
+importInput.accept = 'application/json,.json';
+importInput.className = 'sr-only';
+importLabel.append(importText, importInput);
+
+const importStatus = document.createElement('p');
+importStatus.className = 'settings-status';
+importStatus.setAttribute('role', 'status');
+
+importInput.addEventListener('change', async () => {
+  const file = importInput.files?.[0];
+  importInput.value = '';
+  if (!file) return;
+  try {
+    const result = importConfig(await file.text());
+    if (!result.ok) {
+      importStatus.textContent = t(
+        config.language,
+        result.reason === 'version' ? 'importVersion' : 'importInvalid',
+      );
+      return;
+    }
+    applyConfig(result.config);
+    importStatus.textContent = t(config.language, 'importOk');
+  } catch {
+    importStatus.textContent = t(config.language, 'importInvalid');
+  }
+});
+
+dataActions.append(exportBtn, importLabel);
+dataGroup.append(dataHeading, dataHint, dataActions, importStatus);
+
 const settingsActions = document.createElement('div');
 settingsActions.className = 'settings-actions';
 const doneBtn = document.createElement('button');
@@ -472,15 +602,18 @@ doneBtn.type = 'submit';
 setText(doneBtn, 'done');
 settingsActions.append(doneBtn);
 
-settingsForm.append(
-  settingsHeader,
+const settingsBody = document.createElement('div');
+settingsBody.className = 'settings-body';
+settingsBody.append(
   createField('nameLabel', nameInput),
   createField('languageLabel', languageSelect),
   createField('clockLabel', clockSelect),
-  effectsField,
+  effectsToggle.field,
   createField('motionLabel', motionSelect),
-  settingsActions,
+  weatherGroup,
+  dataGroup,
 );
+settingsForm.append(settingsHeader, settingsBody, settingsActions);
 settingsDialog.appendChild(settingsForm);
 
 settingsBtn.addEventListener('click', () => {
@@ -526,4 +659,5 @@ function updateClock(): void {
 }
 
 applyLanguage();
+weatherWidget.refresh();
 setInterval(updateClock, 1000);

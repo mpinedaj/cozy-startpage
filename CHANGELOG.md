@@ -14,6 +14,10 @@ All notable changes to this project will be documented in this file.
 - Settings dialog with name, language, clock format, ambient particles and motion preference; all values persist to the versioned storage key.
 - Live localisation: English and Spanish strings for the whole page, switched without a reload.
 - Ambient dust motes in the scene side bands, toggled by the effects setting.
+- To-do widget with add, toggle, delete, clear done and an empty state, persisted with the rest of the config.
+- Optional weather card powered by Open-Meteo geocoding and current conditions, with off / no-city / loading / error / ready states and a retry action.
+- Config backup: export the whole config to a dated JSON file and import one back with validation.
+- `tf()` interpolation helper for translated strings with placeholders.
 
 ### Fixed
 
@@ -22,3 +26,6 @@ All notable changes to this project will be documented in this file.
 - Canvas no longer overpowers the page: fixed 320x180 at 1x and moved all layout/spacing into external CSS (no inline styles).
 - Scene colors now come from the active theme's CSS variables and update immediately on theme change.
 - Reduced motion now freezes the scene on a single painted frame instead of an empty canvas.
+- Settings dialog keeps its header and "Done" button fixed while the fields scroll, so the primary action stays reachable on short screens.
+- Checked checkboxes use the foreground color, so they stay visible on the night theme.
+- The CSP now allows the Open-Meteo geocoding host, which previously blocked every weather lookup.
