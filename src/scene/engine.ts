@@ -30,6 +30,7 @@ export class SceneEngine {
   private time = 0;
   private timeOfDay: SceneContext['timeOfDay'] = 'day';
   private reducedMotion = false;
+  private effects = true;
   private palette: ScenePalette = readPalette();
   private raf = 0;
 
@@ -49,18 +50,56 @@ export class SceneEngine {
     this.scene = scene;
     const ctx = this.makeCtx();
     scene.init?.(ctx);
+    this.redrawIfIdle();
   }
 
   setTimeOfDay(t: SceneContext['timeOfDay']): void {
+    if (this.timeOfDay === t) return;
     this.timeOfDay = t;
+    this.redrawIfIdle();
   }
 
   setReducedMotion(v: boolean): void {
     this.reducedMotion = v;
+    this.redrawIfIdle();
+  }
+
+  setEffects(v: boolean): void {
+    if (this.effects === v) return;
+    this.effects = v;
+    this.redrawIfIdle();
   }
 
   refreshPalette(): void {
     this.palette = readPalette();
+    this.redrawIfIdle();
+  }
+
+  /** Draw one frame without starting the animation loop. */
+  render(): void {
+    if (!this.scene) return;
+    const c = this.makeCtx();
+    this.scene.draw(c);
+    if (this.effects) this.drawAmbient(c);
+  }
+
+  private redrawIfIdle(): void {
+    if (!this.running) this.render();
+  }
+
+  /**
+   * Sparse dust motes in the side bands of the scene. They stay clear of the
+   * centred motif and are disabled by the "Ambient particles" setting.
+   */
+  private drawAmbient(c: SceneContext): void {
+    const { ctx, width, height, palette, time } = c;
+    for (let i = 0; i < 5; i += 1) {
+      const band = i % 2 === 0 ? width * 0.16 : width * 0.84;
+      const x = Math.floor(band + Math.sin(time * 0.4 + i * 1.7) * 20);
+      const y = Math.floor((i * 41 + time * (4 + i)) % height);
+      ctx.fillStyle = i % 2 === 0 ? palette.accent : palette.secondary;
+      ctx.fillRect(x, y, 2, 2);
+    }
   }
 
   private makeCtx(): SceneContext {
@@ -85,8 +124,7 @@ export class SceneEngine {
       this.last = now;
       if (this.reducedMotion) {
         // render single frame then stop
-        const c = this.makeCtx();
-        this.scene?.draw(c);
+        this.render();
         this.running = false;
         return;
       }
@@ -97,9 +135,7 @@ export class SceneEngine {
         const c = this.makeCtx();
         this.scene?.update(this.step, c);
       }
-      const c = this.makeCtx();
-      c.time = this.time;
-      this.scene?.draw(c);
+      this.render();
       this.raf = requestAnimationFrame(loop);
     };
     this.raf = requestAnimationFrame(loop);
