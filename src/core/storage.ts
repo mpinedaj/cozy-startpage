@@ -22,22 +22,27 @@ function migrate(raw: unknown): Config {
     ...base,
     version: CONFIG_VERSION,
     name: asString(raw.name, base.name),
-    theme: (['cafe', 'forest', 'lavender', 'night'].includes(raw.theme as string)
+    theme: ['cafe', 'forest', 'lavender', 'night'].includes(raw.theme as string)
       ? (raw.theme as Config['theme'])
-      : base.theme),
+      : base.theme,
     scene: asString(raw.scene, base.scene),
-    clockFormat: raw.clockFormat === '12' ? '12' : raw.clockFormat === '24' ? '24' : base.clockFormat,
-    searchEngine: (['duckduckgo', 'google', 'bing', 'brave'].includes(raw.searchEngine as string)
+    clockFormat:
+      raw.clockFormat === '12' ? '12' : raw.clockFormat === '24' ? '24' : base.clockFormat,
+    searchEngine: ['duckduckgo', 'google', 'bing', 'brave'].includes(raw.searchEngine as string)
       ? (raw.searchEngine as Config['searchEngine'])
-      : base.searchEngine),
+      : base.searchEngine,
     effects: asBool(raw.effects, base.effects),
     reducedMotion:
       raw.reducedMotion === 'system' || raw.reducedMotion === 'on' || raw.reducedMotion === 'off'
         ? (raw.reducedMotion as Config['reducedMotion'])
         : base.reducedMotion,
     language: raw.language === 'es' ? 'es' : 'en',
-    links: Array.isArray(raw.links) ? (raw.links as Config['links']).filter(isValidLink) : base.links,
-    tasks: Array.isArray(raw.tasks) ? (raw.tasks as Config['tasks']).filter(isValidTask) : base.tasks,
+    links: Array.isArray(raw.links)
+      ? (raw.links as Config['links']).filter(isValidLink)
+      : base.links,
+    tasks: Array.isArray(raw.tasks)
+      ? (raw.tasks as Config['tasks']).filter(isValidTask)
+      : base.tasks,
     weather: isObject(raw.weather)
       ? {
           enabled: asBool(raw.weather.enabled, base.weather.enabled),

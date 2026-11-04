@@ -4,7 +4,9 @@ import { addLink, removeLink, updateLink, moveLink } from './links';
 
 describe('links', () => {
   let cfg = defaultConfig();
-  beforeEach(() => { cfg = defaultConfig(); });
+  beforeEach(() => {
+    cfg = defaultConfig();
+  });
 
   it('add valid', () => {
     expect(addLink(cfg, 'Ex', 'https://example.com')).toBe(true);

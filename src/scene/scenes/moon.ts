@@ -39,7 +39,8 @@ export const moonScene: Scene = {
     drawSprite(ctx, MOON, x, y, SCALE, palette);
 
     // More stars after dark, none at midday.
-    const starCount = timeOfDay === 'night' ? 4 : timeOfDay === 'dusk' ? 2 : timeOfDay === 'dawn' ? 1 : 0;
+    const starCount =
+      timeOfDay === 'night' ? 4 : timeOfDay === 'dusk' ? 2 : timeOfDay === 'dawn' ? 1 : 0;
     const stars = [
       [x - 28, y + 20],
       [x + w + 18, y + 34],

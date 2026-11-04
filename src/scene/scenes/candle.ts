@@ -20,20 +20,8 @@ export const CANDLE: Sprite = [
   '................',
 ];
 
-export const FLAME_A: Sprite = [
-  '.r.',
-  '.r.',
-  'rrr',
-  'rrr',
-  '.r.',
-];
-export const FLAME_B: Sprite = [
-  '.r.',
-  '.r.',
-  'rrr',
-  '.r.',
-  '.r.',
-];
+export const FLAME_A: Sprite = ['.r.', '.r.', 'rrr', 'rrr', '.r.'];
+export const FLAME_B: Sprite = ['.r.', '.r.', 'rrr', '.r.', '.r.'];
 
 const SCALE = 8;
 
