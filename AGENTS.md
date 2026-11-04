@@ -1,9 +1,11 @@
 # AGENTS.md — cozy-startpage
 
 ## Project
+
 Customizable browser start page / new-tab page with a cozy pixel-art look. No backend, no analytics, no tracking, no accounts. Hosted on GitHub Pages.
 
 ## Stack
+
 - Vite + TypeScript (vanilla-ts), strict mode, ES modules. No frameworks.
 - DOM for UI, single low-res `<canvas>` (320x180) scaled with integer scaling + `image-rendering: pixelated`.
 - Plain CSS with custom properties. Themes via `data-theme` on `<body>`. Pixel shadows, `border-radius: 0`.
@@ -13,6 +15,7 @@ Customizable browser start page / new-tab page with a cozy pixel-art look. No ba
 - Tooling: ESLint (typescript-eslint), Prettier, Vitest, Playwright, GitHub Actions.
 
 ## Commands
+
 - `npm run dev` — dev server
 - `npm run typecheck` — `tsc --noEmit`
 - `npm run lint` — eslint
@@ -20,11 +23,14 @@ Customizable browser start page / new-tab page with a cozy pixel-art look. No ba
 - `npm run build` — tsc && vite build
 - `npm run e2e` — playwright test
 - `npm run format` — prettier write
+- `npm run format:check` — prettier check
 
 ## Quality gates (all must pass before every PR)
-`npm run typecheck`, `npm run lint`, `npm run test`, `npm run build`.
+
+`npm run format:check`, `npm run typecheck`, `npm run lint`, `npm run test`, `npm run build`, `npm run e2e`.
 
 ## Conventions
+
 - Never commit/push directly to `main`. One branch per milestone.
 - Conventional Commits.
 - No `any`. No dead code. No unnecessary deps (justify in docs/DECISIONS.md).
@@ -34,4 +40,5 @@ Customizable browser start page / new-tab page with a cozy pixel-art look. No ba
 - Pixel art created in code or original; credit third-party assets.
 
 ## Structure
+
 `src/core`, `src/features`, `src/scene`, `src/ui`, `src/i18n`, `src/styles`.

@@ -64,3 +64,11 @@
 - Fixed the checked checkbox fill: it used `--accent`, which was nearly invisible on the night theme; it now uses `--fg`.
 - Tests: tasks, weather URL builders and parsers, portable config, i18n interpolation (62 total).
 - Next: Milestone 6 polish and release.
+
+## 2026-11-04 — Milestone 6: polish and release
+
+- Added a Playwright suite (12 specs) that runs against the production build: links, tasks, language switching, weather (mocked, including the failure path), export/import, reduced motion and the phone layout.
+- Added an `e2e` job to CI that installs Chromium and uploads traces when it fails.
+- Rewrote the README: what it does, live demo, privacy, how to run it, where to customise, commands, structure and screenshots. Screenshots are committed under `docs/screenshots/`.
+- Accessibility pass: hidden `<h1>` for the page, `aria-live` on the weather message, and secondary text moved from 0.7/0.75 opacity to 0.85 so hints, widget metadata and completed tasks clear WCAG AA contrast.
+- First release: version 1.0.0, changelog folded into a dated section, tag pushed.
