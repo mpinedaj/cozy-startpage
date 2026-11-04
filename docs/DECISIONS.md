@@ -29,3 +29,15 @@ Consequences: The scene reads as a compact widget, the dashboard has obvious res
 Context: Milestone 4 needs name, language, clock format, effects and motion settings without adding a framework or a second storage key.
 Decision: Use a native `<dialog>` element with `showModal()`, built with DOM APIs in `src/main.ts`. Each control writes to `config`, calls `saveConfig()` and applies its effect immediately; there is no "Save" button, only "Done". Localisation uses `data-i18n`, `data-i18n-placeholder` and `data-i18n-aria` attributes so `applyLanguage()` can re-localise the whole page without a reload. `margin: auto` is set explicitly on the dialog because the global margin reset overrides the UA centring.
 Consequences: Settings are one interaction away and never lost mid-edit, and the dialog traps focus for free. The trade-off is a small amount of manual DOM wiring, which keeps the bundle framework-free.
+
+## 0006 — Weather is opt-in, stateless and never trusted
+
+Context: The weather widget needs a city and a forecast without an API key, an account, or a backend, and the page must stay privacy-friendly.
+Decision: Use Open-Meteo geocoding plus the current-conditions endpoint, both called from the browser. The stored config keeps only `weather.enabled` and the city name; forecast values live in memory and are refreshed when the page loads, when the setting changes, or on an explicit retry. Responses are parsed through shape guards instead of being trusted, and only two hosts are added to the CSP `connect-src`. Weather is off by default, so a fresh install makes no third-party request.
+Consequences: The first paint after enabling weather needs a network round trip and can fail, which is why the widget has explicit off / no-city / loading / error / ready states. Stale responses are dropped by comparing request ids. Nothing about the forecast is persisted, so the exported config stays small and portable.
+
+## 0007 — Import goes through the storage normaliser
+
+Context: Importing a JSON file is the easiest way to corrupt a config: unknown fields, wrong types, or a file written by a future version.
+Decision: `importConfig()` rejects malformed JSON, non-objects and files whose `version` is newer than `CONFIG_VERSION`, then hands the object to the same `migrate()` used for `localStorage`. The UI replaces the live config with the result and re-applies theme, scene, motion, language and widgets in one place.
+Consequences: A hand-edited file behaves exactly like old stored data: unknown fields are ignored and invalid links or tasks are filtered out. Import can never crash the page, and future migrations only have to be written once.

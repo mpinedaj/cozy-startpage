@@ -53,3 +53,14 @@
 - Added optional ambient dust motes drawn in the scene side bands, controlled by the "Ambient particles" setting.
 - All layout and control styling lives in `src/styles/base.css`; verified no inline styles, no horizontal overflow, and a dialog that fits a 390px viewport.
 - Next: Milestone 5 extras (weather, to-do).
+
+## 2026-11-03 — Milestone 5: weather, to-do and backup
+
+- Replaced the reserved sidebar slots with real widgets: a to-do list (add, toggle, delete, clear done, empty state) and an opt-in weather card.
+- Weather uses Open-Meteo geocoding plus the current-conditions endpoint. Only the city and the on/off flag are stored; the forecast is fetched on demand with an 8s timeout and a retry button.
+- Added the geocoding host to the CSP `connect-src`, which was silently blocking the lookup.
+- Added config export to a dated JSON file and import with the same normaliser used for storage, plus a guard against files from a newer version.
+- Moved the settings dialog to a fixed header and footer with a scrollable body, so "Done" stays reachable on small screens.
+- Fixed the checked checkbox fill: it used `--accent`, which was nearly invisible on the night theme; it now uses `--fg`.
+- Tests: tasks, weather URL builders and parsers, portable config, i18n interpolation (62 total).
+- Next: Milestone 6 polish and release.
