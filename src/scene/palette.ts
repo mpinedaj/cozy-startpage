@@ -1,5 +1,3 @@
-import type { ThemeId } from '../core/types';
-
 export interface ScenePalette {
   bg: string;
   ink: string;
@@ -7,15 +5,28 @@ export interface ScenePalette {
   secondary: string;
 }
 
-// Each theme is built from exactly four named colors: cream, coffee, moss, rose.
-// Scenes may only use these four, mapped to the roles below.
-export const palettes: Record<ThemeId, ScenePalette> = {
-  cafe: { bg: '#f4e9d8', ink: '#5b3a29', accent: '#6b8f71', secondary: '#e8a7a0' },
-  forest: { bg: '#e8f0e4', ink: '#2f4a33', accent: '#6b8f71', secondary: '#c98b84' },
-  lavender: { bg: '#f0e8f7', ink: '#4a3a5b', accent: '#8a7fa8', secondary: '#d9a7cf' },
-  night: { bg: '#12121f', ink: '#e8e0d8', accent: '#3a4a5b', secondary: '#e8a7a0' },
+const FALLBACK: ScenePalette = {
+  bg: '#f4e9d8',
+  ink: '#5b3a29',
+  accent: '#6b8f71',
+  secondary: '#e8a7a0',
 };
 
-export function getPalette(theme: ThemeId): ScenePalette {
-  return palettes[theme] ?? palettes.cafe;
+/**
+ * Read the four theme roles from the active CSS theme.
+ * The canvas therefore follows `data-theme` with no duplicated palette table.
+ */
+export function readPalette(): ScenePalette {
+  if (typeof document === 'undefined') return FALLBACK;
+  const styles = getComputedStyle(document.body);
+  const read = (name: string, fallback: string): string => {
+    const value = styles.getPropertyValue(name).trim();
+    return value || fallback;
+  };
+  return {
+    bg: read('--bg', FALLBACK.bg),
+    ink: read('--fg', FALLBACK.ink),
+    accent: read('--accent', FALLBACK.accent),
+    secondary: read('--muted', FALLBACK.secondary),
+  };
 }

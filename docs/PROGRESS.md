@@ -29,3 +29,12 @@
 - Enforced integer canvas scaling: 320x180 buffer at exactly 3x on desktop, 1x on mobile. Verified `image-rendering: pixelated` and hard edges.
 - Added sprite matrix tests (rectangular, allowed symbols) and basic page styling so the scene reads in context.
 - Next: Milestone 4 settings and effects.
+
+## 2026-11-03 — Fix: dashboard layout and compact scene
+- Restructured the page as a CSS Grid dashboard: clock/search and links on the left, a 360px sidebar with the scene card and two reserved Phase 2 slots (Weather, To-do).
+- Shrank the canvas to a compact 320x180 widget at exactly 1x; `box-sizing: content-box` keeps borders from producing a fractional scale.
+- Moved all layout and spacing into `src/styles/base.css`; no inline styles are emitted anywhere in the DOM.
+- Scenes now read `--bg`, `--fg`, `--accent` and `--muted` from the active `data-theme`, so switching themes repaints the canvas immediately.
+- Motifs scaled up inside the compact canvas, with time-of-day details (steam, leaves/fireflies, flame speed, stars).
+- Responsive: stacks at 820px, links first on mobile; verified no horizontal overflow at 390px.
+- Next: Milestone 4 settings and effects.

@@ -1,5 +1,4 @@
-import { getPalette, type ScenePalette } from './palette';
-import type { ThemeId } from '../core/types';
+import { readPalette, type ScenePalette } from './palette';
 
 export interface SceneContext {
   ctx: CanvasRenderingContext2D;
@@ -31,7 +30,7 @@ export class SceneEngine {
   private time = 0;
   private timeOfDay: SceneContext['timeOfDay'] = 'day';
   private reducedMotion = false;
-  private theme: ThemeId = 'cafe';
+  private palette: ScenePalette = readPalette();
   private raf = 0;
 
   constructor(canvas: HTMLCanvasElement) {
@@ -60,8 +59,8 @@ export class SceneEngine {
     this.reducedMotion = v;
   }
 
-  setTheme(theme: ThemeId): void {
-    this.theme = theme;
+  refreshPalette(): void {
+    this.palette = readPalette();
   }
 
   private makeCtx(): SceneContext {
@@ -72,7 +71,7 @@ export class SceneEngine {
       time: this.time,
       timeOfDay: this.timeOfDay,
       reducedMotion: this.reducedMotion,
-      palette: getPalette(this.theme),
+      palette: this.palette,
     };
   }
 

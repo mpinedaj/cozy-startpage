@@ -14,3 +14,8 @@ Consequences: Scenes read clearly at a glance and stay tied to the theme. Less e
 Context: A steaming mug belongs to the cafe theme, a tree to forest, a candle to lavender and a moon to night. Time-of-day still drives the greeting and will drive ambient effects.
 Decision: `scene: 'auto'` selects the motif from the active theme instead of the hour.
 Consequences: The page stays coherent when the user switches themes. Time-of-day scene switching is replaced by theme-driven switching; documented here because it differs from the original brief.
+
+## 0004 — Dashboard grid with a compact scene widget
+Context: A full-width canvas dominated the page and pushed the clock, search and links into a single vertical stack with no room reserved for Phase 2 widgets.
+Decision: Layout is a two-column CSS Grid (hero + links on the left, a 360px sidebar on the right). The sidebar holds the scene card plus dashed Weather and To-do placeholder slots. The canvas buffer stays 320x180 and is displayed at exactly 1x inside the card, with `box-sizing: content-box` so borders never shrink the content to a fractional scale. On narrow screens the grid stacks and links move above the widgets. All layout lives in `src/styles/base.css`; no element receives an inline `style`.
+Consequences: The scene reads as a compact widget, the dashboard has obvious reserved space for Phase 2, and pixel art stays integer-crisp at every breakpoint.
