@@ -3,48 +3,46 @@ import { drawSprite, spriteHeight, spriteWidth, type Sprite } from '../sprites';
 
 export const CANDLE: Sprite = [
   '................',
-  '................',
-  '................',
-  '................',
-  '................',
   '.......k........',
   '......kkk.......',
-  '....kmmmmmk.....',
-  '....kmmmmmk.....',
-  '....kmmmmmk.....',
-  '....kmmmmmk.....',
-  '....kmmmmmk.....',
-  '....kkkkkkk.....',
+  '.....kmmmk......',
+  '.....kmmmk......',
+  '.....kmmmk......',
+  '.....kmmmk......',
+  '.....kmmmk......',
+  '.....kmmmk......',
+  '.....kmmmk......',
+  '.....kmmmk......',
   '.....kkkkk......',
+  '.....kkkkk......',
+  '................',
   '................',
   '................',
 ];
 
 export const FLAME_A: Sprite = [
-  '...r...',
-  '..rrr..',
-  '.rrrrr.',
-  'rrrrrrr',
-  '.rrrrr.',
-  '..rrr..',
+  '.r.',
+  '.r.',
+  'rrr',
+  'rrr',
+  '.r.',
 ];
 export const FLAME_B: Sprite = [
-  '...r...',
-  '..rrr..',
-  '.rrrrr.',
-  '.rrrrr.',
-  '..rrr..',
-  '...r...',
+  '.r.',
+  '.r.',
+  'rrr',
+  '.r.',
+  '.r.',
 ];
 
-const SCALE = 10;
+const SCALE = 8;
 
 export const candleScene: Scene = {
   id: 'candle',
   name: 'Candle',
   update: () => {},
   draw: (c: SceneContext) => {
-    const { ctx, width, height, palette, time } = c;
+    const { ctx, width, height, palette, time, timeOfDay } = c;
     ctx.fillStyle = palette.bg;
     ctx.fillRect(0, 0, width, height);
 
@@ -53,12 +51,15 @@ export const candleScene: Scene = {
     const x = Math.floor((width - w) / 2);
     const y = Math.floor((height - h) / 2);
 
-    // The flame sits directly on the wick and alternates between two matrices.
-    const flame = Math.floor(time * 8) % 2 === 0 ? FLAME_A : FLAME_B;
-    drawSprite(ctx, flame, x + 4 * SCALE + 5, y - SCALE, SCALE, palette);
+    // The flame sits directly on the wick and flickers faster after dark.
+    const speed = timeOfDay === 'night' ? 11 : timeOfDay === 'day' ? 6 : 8;
+    const flame = Math.floor(time * speed) % 2 === 0 ? FLAME_A : FLAME_B;
+    const flameX = x + 6 * SCALE;
+    const flameY = y + SCALE - spriteHeight(flame) * SCALE;
+    drawSprite(ctx, flame, flameX, flameY, SCALE, palette);
 
     ctx.fillStyle = palette.accent;
-    ctx.fillRect(x + 3 * SCALE, y + 14 * SCALE, 10 * SCALE, 2);
+    ctx.fillRect(x + 5 * SCALE, y + 13 * SCALE, 6 * SCALE, 2);
 
     drawSprite(ctx, CANDLE, x, y, SCALE, palette);
   },

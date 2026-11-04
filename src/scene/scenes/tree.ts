@@ -21,14 +21,14 @@ export const TREE: Sprite = [
   '................',
 ];
 
-const SCALE = 10;
+const SCALE = 8;
 
 export const treeScene: Scene = {
   id: 'tree',
   name: 'Tree',
   update: () => {},
   draw: (c: SceneContext) => {
-    const { ctx, width, height, palette, time } = c;
+    const { ctx, width, height, palette, time, timeOfDay } = c;
     ctx.fillStyle = palette.bg;
     ctx.fillRect(0, 0, width, height);
 
@@ -42,13 +42,23 @@ export const treeScene: Scene = {
 
     drawSprite(ctx, TREE, x, y, SCALE, palette);
 
-    // A few leaves drift down at integer pixel positions.
-    for (let i = 0; i < 3; i++) {
-      const fall = (time * 14 + i * 31) % 92;
-      const lx = x + (4 + i * 4) * SCALE + Math.round(Math.sin(time + i) * 3);
-      const ly = y + 3 * SCALE + Math.floor(fall);
-      ctx.fillStyle = i % 2 === 0 ? palette.secondary : palette.accent;
-      ctx.fillRect(lx, ly, 3, 3);
+    if (timeOfDay === 'night') {
+      // Slow rose fireflies instead of falling leaves.
+      for (let i = 0; i < 2; i++) {
+        const fx = x + (5 + i * 6) * SCALE + Math.round(Math.sin(time * 0.7 + i) * 4);
+        const fy = y + (4 + i * 5) * SCALE + Math.round(Math.cos(time * 0.6 + i) * 4);
+        ctx.fillStyle = palette.secondary;
+        ctx.fillRect(fx, fy, 3, 3);
+      }
+    } else {
+      const leaves = timeOfDay === 'day' ? 2 : timeOfDay === 'dusk' ? 3 : 1;
+      for (let i = 0; i < leaves; i++) {
+        const fall = (time * 14 + i * 31) % 92;
+        const lx = x + (4 + i * 7) * SCALE + Math.round(Math.sin(time + i) * 3);
+        const ly = y + 3 * SCALE + Math.floor(fall);
+        ctx.fillStyle = i % 2 === 0 ? palette.secondary : palette.accent;
+        ctx.fillRect(lx, ly, 3, 3);
+      }
     }
   },
 };

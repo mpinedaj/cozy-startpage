@@ -29,14 +29,14 @@ export const MUG: Sprite = [
   '...........................',
 ];
 
-const SCALE = 6;
+const SCALE = 5;
 
 export const mugScene: Scene = {
   id: 'mug',
   name: 'Mug',
   update: () => {},
   draw: (c: SceneContext) => {
-    const { ctx, width, height, palette, time } = c;
+    const { ctx, width, height, palette, time, timeOfDay } = c;
     ctx.fillStyle = palette.bg;
     ctx.fillRect(0, 0, width, height);
 
@@ -45,13 +45,14 @@ export const mugScene: Scene = {
     const x = Math.floor((width - w) / 2);
     const y = Math.floor((height - h) / 2);
 
-    // Steam: three sparse columns of hard pixels rising from the mug rim.
-    const steamTop = Math.max(2, y - 24);
+    // Tighter steam at night, livelier steam during the day.
+    const steamColumns = timeOfDay === 'day' ? 3 : timeOfDay === 'night' ? 1 : 2;
+    const steamTop = Math.max(2, y - 20);
     const steamBottom = y + SCALE;
     const span = Math.max(1, steamBottom - steamTop);
-    const steamBase = x + 6 * SCALE;
+    const steamBase = x + 8 * SCALE;
     ctx.fillStyle = palette.ink;
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < steamColumns; i++) {
       for (let j = 0; j < 3; j++) {
         const phase = (time * 11 + i * 9 + j * 13) % span;
         const sy = Math.floor(steamBottom - phase);

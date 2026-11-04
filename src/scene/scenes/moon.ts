@@ -20,14 +20,14 @@ export const MOON: Sprite = [
   '................',
 ];
 
-const SCALE = 10;
+const SCALE = 8;
 
 export const moonScene: Scene = {
   id: 'moon',
   name: 'Moon',
   update: () => {},
   draw: (c: SceneContext) => {
-    const { ctx, width, height, palette, time } = c;
+    const { ctx, width, height, palette, time, timeOfDay } = c;
     ctx.fillStyle = palette.bg;
     ctx.fillRect(0, 0, width, height);
 
@@ -38,14 +38,15 @@ export const moonScene: Scene = {
 
     drawSprite(ctx, MOON, x, y, SCALE, palette);
 
-    // Four hard, twinkling stars around the moon.
+    // More stars after dark, none at midday.
+    const starCount = timeOfDay === 'night' ? 4 : timeOfDay === 'dusk' ? 2 : timeOfDay === 'dawn' ? 1 : 0;
     const stars = [
       [x - 28, y + 20],
       [x + w + 18, y + 34],
       [x + 10, y + h + 16],
       [x + w - 22, y - 14],
     ];
-    for (let i = 0; i < stars.length; i++) {
+    for (let i = 0; i < starCount; i++) {
       const on = Math.floor(time * 2 + i) % 4 !== 0;
       if (!on) continue;
       ctx.fillStyle = i % 2 === 0 ? palette.secondary : palette.accent;
