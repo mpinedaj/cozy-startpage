@@ -36,6 +36,7 @@ Customizable browser start page / new-tab page with a cozy pixel-art look. No ba
 - Conventional Commits.
 - No `any`. No dead code. No unnecessary deps (justify in docs/DECISIONS.md).
 - Never insert user data with innerHTML (use textContent/DOM APIs).
+- Never use `prompt()`, `alert()` or `confirm()`; use `src/ui/dialog.ts` for messages, confirmations and forms.
 - Sanitize link URLs (http/https only).
 - Validate imported JSON.
 - Pixel art created in code or original; credit third-party assets.

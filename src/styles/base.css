@@ -475,6 +475,85 @@ input[type='checkbox']:checked {
 }
 
 /* --------------------------------------------------------------------------
+   Pixel dialogs: link editing, confirmations and messages
+   -------------------------------------------------------------------------- */
+.pixel-dialog {
+  width: min(92vw, 400px);
+  margin: auto;
+  padding: 0;
+  border: 3px solid var(--fg);
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font);
+  box-shadow: 8px 8px 0 var(--shadow);
+}
+
+.pixel-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.pixel-dialog::backdrop {
+  background: rgb(0 0 0 / 0.55);
+}
+
+.pixel-dialog-form {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.pixel-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px 10px;
+}
+
+.pixel-dialog-header h2 {
+  font-size: 1.35rem;
+}
+
+.pixel-dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 4px 20px 16px;
+}
+
+.dialog-message {
+  margin: 0;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.dialog-error {
+  padding: 6px 8px;
+  border: 2px solid var(--fg);
+  box-shadow: 3px 3px 0 var(--muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.dialog-error[hidden] {
+  display: none;
+}
+
+.dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 20px 18px;
+  border-top: 2px solid var(--fg);
+}
+
+.dialog-confirm.danger {
+  box-shadow: 3px 3px 0 var(--muted);
+}
+
+/* --------------------------------------------------------------------------
    Controls
    -------------------------------------------------------------------------- */
 input,
