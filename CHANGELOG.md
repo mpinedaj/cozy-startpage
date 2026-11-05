@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-05
+
+Visual redesign: full-screen layered scenes, time-of-day palettes and accessible pixel dialogs.
+
 ### Added
 
 - Full-screen pixel-art backdrop: a 320×180 canvas scaled by the smallest integer factor that covers
@@ -23,7 +27,6 @@ All notable changes to this project will be documented in this file.
 
 - Link editing and destructive actions no longer use `prompt()`, `alert()` or `confirm()`; every
   dialog is a themed `<dialog>` element.
-
 - The UI now sits on translucent pixel panels over the scene: clock, greeting and search centred,
   links on the left, weather and tasks on the right, stacked on phones.
 - Config format is version 2. v1 configs and v1 backups are migrated automatically, including the

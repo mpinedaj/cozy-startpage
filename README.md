@@ -107,6 +107,10 @@ docs            plan, progress log and architecture decisions
 | ------------------------------------------------- | -------------------------------------------- |
 | ![Settings dialog](docs/screenshots/settings.png) | ![Phone layout](docs/screenshots/mobile.png) |
 
+| Link editor                                             | Delete confirmation                                         |
+| ------------------------------------------------------- | ----------------------------------------------------------- |
+| ![Link editor dialog](docs/screenshots/dialog-edit.png) | ![Delete confirmation](docs/screenshots/dialog-confirm.png) |
+
 The four scenes at their signature time of day: rainy window at night, forest at dusk, cafe at day
 and mountain lake at dawn.
 
