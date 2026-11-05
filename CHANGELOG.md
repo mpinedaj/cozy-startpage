@@ -4,6 +4,36 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Full-screen pixel-art backdrop: a 320×180 canvas scaled by the smallest integer factor that covers
+  the viewport, centred and cropped, never stretched.
+- Layered scene system with 3–4 depths, pre-rendered layers, parallax and a 12 FPS loop that pauses
+  when the tab is hidden.
+- Four new scenes: rainy window, forest dusk, cafe interior and mountain lake, each with 14-colour
+  palettes for dawn, day, dusk and night, plus pixel discs and crescents for suns and moons.
+- Time-of-day selection (`auto`, `dawn`, `day`, `dusk`, `night`) in settings, stored as `sceneTime`.
+- Optional image layers loaded from `public/assets/scenes/<id>/manifest.json`; invalid or missing
+  manifests fall back to the procedural art.
+- `CREDITS.md` and an asset policy in `CONTRIBUTING.md`.
+
+### Changed
+
+- The UI now sits on translucent pixel panels over the scene: clock, greeting and search centred,
+  links on the left, weather and tasks on the right, stacked on phones.
+- Config format is version 2. v1 configs and v1 backups are migrated automatically, including the
+  legacy scene ids.
+- Screenshots regenerated, with a new scene contact sheet in `docs/screenshots/scenes.png`.
+
+### Fixed
+
+- Gradient bands no longer dither across their full height (which read as noise); dithering is
+  limited to the transitions between flat bands.
+- Lamp light cones are drawn as sparse motes instead of a checkerboard block.
+- Night moons are clipped crescents, so the bite cannot paint over the sky.
+- The mountain-lake campfire moved out from behind the widget column.
+- Restored the edit/close/reorder glyphs that had been mangled by a text encoding round-trip.
+
 ## [1.0.0] - 2026-11-04
 
 First release.

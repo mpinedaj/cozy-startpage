@@ -47,3 +47,26 @@ Consequences: A hand-edited file behaves exactly like old stored data: unknown f
 Context: Unit tests cover the pure logic, but the settings dialog, the widgets and the storage wiring only exist in the DOM. Testing them against `vite dev` would exercise different module loading and CSS than what ships.
 Decision: Playwright starts `npm run build && npm run preview` (its `webServer` config) and drives the real bundle on port 4173. Third-party calls are mocked with `page.route`, so the suite never touches the network. Every test seeds a config into `localStorage`, reloads, then asserts both the UI and the stored value. CI runs the same command in a separate job.
 Consequences: The suite catches integration bugs that unit tests cannot (it found the file input being wiped by re-localisation), at the cost of one browser download in CI.
+
+## 0009 — Full-bleed layered scenes with their own palettes
+
+Context: v1 drew one small motif per scene with only the four UI theme colours. It read as a widget, had no depth, and every scene inherited the theme's flat palette. Phase 2 asks for a full-screen backdrop, parallax, dithering and time-of-day variants without making the UI unreadable.
+
+Decision:
+
+- The canvas is a fixed, full-viewport backdrop behind the panels. It keeps a 320×180 logical buffer and is scaled by the smallest integer factor that covers the viewport (`coverScale`), then centred and cropped. It never stretches non-uniformly; `image-rendering: pixelated` keeps every pixel hard.
+- Scenes are built from 3–4 layers painted once into offscreen canvases of 320×180 plus a 40 px bleed on each side. Each layer declares a depth and drifts up to 10 px horizontally at different rates. The engine runs on a 12 FPS accumulator, paints a single frame when motion is reduced, and pauses when the tab is hidden.
+- Every scene ships a 14-colour palette per time of day (`dawn`, `day`, `dusk`, `night`), independent from the UI theme. The theme only applies a 6% `--scene-tint` overlay, so the art keeps its own light while the page stays coherent.
+- Gradients use a 4×4 Bayer matrix, but only inside a narrow transition window; the rest of each band stays flat. This avoids the full-height checkerboard that made the first pass look like noise.
+- The four v1 motif scenes were removed. Their ids are mapped to the closest new scene (`mug`→`cafe-interior`, `tree`→`forest-dusk`, `candle`→`rainy-window`, `moon`→`mountain-lake`) so old configs keep working.
+- Image layers are optional and procedural art is always the fallback: `public/assets/scenes/<id>/manifest.json` is validated before any file is requested (safe file names, depth 0..1, frames 1..64, fps 0..24, at most 8 layers). Missing or invalid manifests resolve to an empty list.
+
+Consequences: Art code is larger, but there is no new dependency and no external request. Scenes must compose for a crop-safe centre (at 1280×900 the outer 32 buffer pixels are cropped) and for panels covering the middle band. Adding a scene means one file with four palettes and layers; themes can change without redrawing any art.
+
+## 0010 — Config v2: scene ids and time of day
+
+Context: v1 stored a motif scene id and had no way to choose a time of day. Changing the scene shapes required a storage format change.
+
+Decision: Bump `CONFIG_VERSION` to 2. `scene` stays `'auto' | SceneId`, and a new `sceneTime` field is `'auto' | 'dawn' | 'day' | 'dusk' | 'night'`. `normalizeScene()` accepts v2 ids, translates the four legacy motif ids, and falls back to `auto` for anything else. The same normaliser runs for `localStorage` and imported JSON, so a v1 backup is migrated on import and rewritten at the next save. Tests cover a full v1 backup, every legacy id, unknown values and invalid `sceneTime`.
+
+Consequences: Old backups keep working without a second code path, and future scenes need no new config fields. Export files now say `"version": 2`; files from a newer version are still rejected.

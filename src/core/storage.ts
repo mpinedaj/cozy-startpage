@@ -1,4 +1,4 @@
-import { CONFIG_VERSION, STORAGE_KEY, type Config } from './types';
+import { CONFIG_VERSION, LEGACY_SCENES, SCENE_IDS, STORAGE_KEY, type Config } from './types';
 import { defaultConfig } from './defaults';
 
 function isObject(v: unknown): v is Record<string, unknown> {
@@ -13,11 +13,19 @@ function asBool(v: unknown, fallback: boolean): boolean {
   return typeof v === 'boolean' ? v : fallback;
 }
 
+const SCENE_VALUES: readonly string[] = ['auto', ...SCENE_IDS];
+
+/** Accept a v2 scene id, translate a v1 motif id, or fall back to auto. */
+export function normalizeScene(value: unknown): Config['scene'] {
+  if (typeof value !== 'string') return 'auto';
+  if (SCENE_VALUES.includes(value)) return value as Config['scene'];
+  return LEGACY_SCENES[value] ?? 'auto';
+}
+
 function migrate(raw: unknown): Config {
   const base = defaultConfig();
   if (!isObject(raw)) return base;
-  const version = typeof raw.version === 'number' ? raw.version : 0;
-  // v0 -> v1: ensure all fields
+  // v1 -> v2: motif scenes became full-bleed scenes and sceneTime was added.
   const cfg: Config = {
     ...base,
     version: CONFIG_VERSION,
@@ -25,7 +33,10 @@ function migrate(raw: unknown): Config {
     theme: ['cafe', 'forest', 'lavender', 'night'].includes(raw.theme as string)
       ? (raw.theme as Config['theme'])
       : base.theme,
-    scene: asString(raw.scene, base.scene),
+    scene: normalizeScene(raw.scene),
+    sceneTime: ['auto', 'dawn', 'day', 'dusk', 'night'].includes(raw.sceneTime as string)
+      ? (raw.sceneTime as Config['sceneTime'])
+      : base.sceneTime,
     clockFormat:
       raw.clockFormat === '12' ? '12' : raw.clockFormat === '24' ? '24' : base.clockFormat,
     searchEngine: ['duckduckgo', 'google', 'bing', 'brave'].includes(raw.searchEngine as string)
@@ -51,8 +62,6 @@ function migrate(raw: unknown): Config {
       : base.weather,
     focusMode: asBool(raw.focusMode, base.focusMode),
   };
-  // version handling placeholder for future migrations
-  void version;
   return cfg;
 }
 

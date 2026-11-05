@@ -1,4 +1,6 @@
-export type TimeOfDay = 'dawn' | 'day' | 'dusk' | 'night';
+import type { TimeOfDay } from '../../core/types';
+
+export type { TimeOfDay };
 
 export function getTimeOfDay(hour: number): TimeOfDay {
   if (hour >= 5 && hour < 8) return 'dawn';

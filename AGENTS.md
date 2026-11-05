@@ -7,8 +7,9 @@ Customizable browser start page / new-tab page with a cozy pixel-art look. No ba
 ## Stack
 
 - Vite + TypeScript (vanilla-ts), strict mode, ES modules. No frameworks.
-- DOM for UI, single low-res `<canvas>` (320x180) scaled with integer scaling + `image-rendering: pixelated`.
+- DOM for UI, one full-viewport `<canvas>` behind the panels: 320x180 logical buffer, integer cover scale, centered and cropped, `image-rendering: pixelated`.
 - Plain CSS with custom properties. Themes via `data-theme` on `<body>`. Pixel shadows, `border-radius: 0`.
+- Scene art has its own 14-colour palettes per time of day; the UI theme only applies a small tint. Do not reuse theme colours for scene art.
 - Pixelify Sans self-hosted via `@fontsource/pixelify-sans`.
 - Storage: `localStorage`, one versioned key, wrapped in try/catch.
 - Optional weather: Open-Meteo (no API key).
