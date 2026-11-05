@@ -95,4 +95,9 @@
 - Pixel styling reuses the theme variables: hard 3px border, 8px hard shadow, square corners, dimmed backdrop and a bordered error box. No new dependency.
 - Tests: expanded the Playwright suite to 18 specs, covering edit + inline validation + persistence, delete cancel/confirm, the invalid-add message, the focus trap and focus restoration on Escape.
 - Visual check at 1280×900 and 390×844 in the cafe and night themes, English and Spanish.
-- Next: release v1.1.0.
+
+## 2026-11-05 — Release v1.1.0
+
+- Bumped the package to 1.1.0, dated the changelog section and refreshed all README screenshots, including link-editor and delete-confirmation shots.
+- Tagged `v1.1.0`, published the GitHub release and deployed the new build to GitHub Pages.
+- Next: Version 1.2, starting with milestone 9 (backgrounds).
