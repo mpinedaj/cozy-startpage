@@ -11,7 +11,8 @@ box, your links, the weather and a to-do list. No account, no backend, no analyt
 
 - **Clock and greeting** that follow the time of day, with 12h or 24h format and an optional name.
 - **Search** with DuckDuckGo, Google, Bing or Brave, without leaving the keyboard.
-- **Links** with add, edit, delete and reorder. URLs are limited to `http` and `https`.
+- **Links** with add, edit, delete and reorder. Editing uses a pixel dialog and deleting asks first.
+  URLs are limited to `http` and `https`.
 - **Full-screen pixel scene** behind the page: four hand-coded scenes (rainy window, forest dusk,
   cafe interior, mountain lake) built from 3–4 parallax layers, with dawn, day, dusk and night
   palettes. All art is procedural, so it stays crisp at any size and ships no image files.

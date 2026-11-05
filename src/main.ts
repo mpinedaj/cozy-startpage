@@ -3,6 +3,7 @@ import './styles/themes.css';
 import '@fontsource/pixelify-sans';
 import { loadConfig, saveConfig } from './core/storage';
 import { exportConfig, importConfig } from './core/portable';
+import { sanitizeUrl } from './core/validation';
 import type { Config, SceneId, ThemeId, TimeOfDay } from './core/types';
 import { formatTime, getTimeOfDay } from './features/clock/timeOfDay';
 import { greetingText } from './features/clock/greeting';
@@ -14,6 +15,7 @@ import { SceneEngine } from './scene/engine';
 import { autoScene, getScene, scenes } from './scene/scenes';
 import { createTasksWidget } from './ui/tasks-widget';
 import { createWeatherWidget } from './ui/weather-widget';
+import { openConfirmDialog, openFormDialog, openMessageDialog } from './ui/dialog';
 
 const config = loadConfig();
 
@@ -184,12 +186,25 @@ function renderLinks(): void {
     editBtn.className = 'icon-button';
     editBtn.textContent = '✎';
     editBtn.setAttribute('aria-label', `${t(config.language, 'edit')} ${link.title}`);
-    editBtn.addEventListener('click', () => {
-      const nextTitle = prompt(t(config.language, 'linkTitle'), link.title);
-      const nextUrl = prompt(t(config.language, 'linkUrlLabel'), link.url);
-      if (nextTitle !== null && nextUrl !== null) {
-        if (updateLink(config, link.id, nextTitle, nextUrl)) renderLinks();
-        else alert(t(config.language, 'invalidLink'));
+    editBtn.addEventListener('click', async () => {
+      const result = await openFormDialog(config.language, {
+        titleKey: 'editLinkTitle',
+        fields: [
+          { name: 'title', labelKey: 'linkTitle', value: link.title, maxLength: 40 },
+          { name: 'url', labelKey: 'linkUrlLabel', type: 'url', value: link.url },
+        ],
+        confirmKey: 'save',
+        cancelKey: 'cancel',
+        validate: (values) =>
+          values.title.trim() && sanitizeUrl(values.url) ? null : 'invalidLink',
+      });
+      if (!result) return;
+      if (updateLink(config, link.id, result.title, result.url)) renderLinks();
+      else {
+        await openMessageDialog(config.language, {
+          titleKey: 'invalidLink',
+          messageKey: 'invalidLinkHint',
+        });
       }
     });
 
@@ -198,7 +213,13 @@ function renderLinks(): void {
     delBtn.className = 'icon-button';
     delBtn.textContent = '×';
     delBtn.setAttribute('aria-label', `${t(config.language, 'delete')} ${link.title}`);
-    delBtn.addEventListener('click', () => {
+    delBtn.addEventListener('click', async () => {
+      const confirmed = await openConfirmDialog(config.language, {
+        titleKey: 'deleteLinkTitle',
+        messageKey: 'deleteLinkMessage',
+        messageVars: { name: link.title },
+      });
+      if (!confirmed) return;
       removeLink(config, link.id);
       renderLinks();
     });
@@ -229,14 +250,17 @@ function renderLinks(): void {
   }
 }
 
-addForm.addEventListener('submit', (event) => {
+addForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   if (addLink(config, titleInput.value, urlInput.value)) {
     titleInput.value = '';
     urlInput.value = '';
     renderLinks();
   } else {
-    alert(t(config.language, 'invalidLink'));
+    await openMessageDialog(config.language, {
+      titleKey: 'invalidLink',
+      messageKey: 'invalidLinkHint',
+    });
   }
 });
 

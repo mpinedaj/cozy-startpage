@@ -16,8 +16,13 @@ All notable changes to this project will be documented in this file.
 - Optional image layers loaded from `public/assets/scenes/<id>/manifest.json`; invalid or missing
   manifests fall back to the procedural art.
 - `CREDITS.md` and an asset policy in `CONTRIBUTING.md`.
+- Accessible pixel dialogs for editing a link, confirming a delete and showing messages, with
+  labelled fields, inline validation, a focus trap, Escape handling and focus restoration.
 
 ### Changed
+
+- Link editing and destructive actions no longer use `prompt()`, `alert()` or `confirm()`; every
+  dialog is a themed `<dialog>` element.
 
 - The UI now sits on translucent pixel panels over the scene: clock, greeting and search centred,
   links on the left, weather and tasks on the right, stacked on phones.

@@ -70,3 +70,11 @@ Context: v1 stored a motif scene id and had no way to choose a time of day. Chan
 Decision: Bump `CONFIG_VERSION` to 2. `scene` stays `'auto' | SceneId`, and a new `sceneTime` field is `'auto' | 'dawn' | 'day' | 'dusk' | 'night'`. `normalizeScene()` accepts v2 ids, translates the four legacy motif ids, and falls back to `auto` for anything else. The same normaliser runs for `localStorage` and imported JSON, so a v1 backup is migrated on import and rewritten at the next save. Tests cover a full v1 backup, every legacy id, unknown values and invalid `sceneTime`.
 
 Consequences: Old backups keep working without a second code path, and future scenes need no new config fields. Export files now say `"version": 2`; files from a newer version are still rejected.
+
+## 0011 — Native `<dialog>` behind a small dialog module
+
+Context: v1 edited links with `prompt()` and reported errors with `alert()`. Those block the page, cannot be styled, ignore the pixel-art direction and behave differently in every browser. The settings panel already uses `<dialog>`, so the platform primitive is proven in this codebase.
+
+Decision: A single module (`src/ui/dialog.ts`) builds `<dialog>` elements on demand and opens them with `showModal()`. Form dialogs resolve `Promise<Record<string, string> | null>`, message dialogs resolve `void` and confirm dialogs resolve `boolean`. Validation runs in the submit handler and writes an inline `role="alert"` message, so a bad URL keeps the dialog open instead of opening a second one. A keydown handler wraps Tab/Shift+Tab across the dialog's controls, `cancel` (Escape) resolves as a cancel, and closing removes the element; the browser restores focus to the opener. Every label, button and message is created with DOM APIs and `data-i18n`, so live language switching also relabels an open dialog.
+
+Consequences: No dependency, no blocking native popups, and the visuals follow the theme. Dialogs are created per use, which is cheap and avoids stale values. Future flows (task confirmation, font picker, background upload) can reuse the module instead of adding another one-off overlay.

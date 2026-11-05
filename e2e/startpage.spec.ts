@@ -102,23 +102,83 @@ test.describe('start page', () => {
     await expect(page.getByRole('link', { name: 'GitHub' })).toBeVisible();
 
     await page.getByRole('button', { name: 'Delete GitHub' }).click();
+    const confirm = page.getByRole('dialog', { name: 'Delete link' });
+    await expect(confirm).toContainText('Remove "GitHub" from your links?');
+    await confirm.getByRole('button', { name: 'Cancel' }).click();
+    await expect(page.getByRole('link', { name: 'GitHub' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Delete GitHub' }).click();
+    await page
+      .getByRole('dialog', { name: 'Delete link' })
+      .getByRole('button', { name: 'Delete' })
+      .click();
     await expect(page.getByRole('link', { name: 'GitHub' })).toHaveCount(0);
     await page.reload();
     await expect(page.getByRole('link', { name: 'GitHub' })).toHaveCount(0);
   });
 
-  test('rejects an invalid link', async ({ page }) => {
+  test('edits a link in a pixel dialog and validates inline', async ({ page }) => {
+    await seed(page, { links: [{ id: 'l1', title: 'GitHub', url: 'https://github.com' }] });
+
+    await page.getByRole('button', { name: 'Edit GitHub' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Edit link' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByLabel('Title')).toHaveValue('GitHub');
+    await expect(dialog.getByLabel('Link URL')).toHaveValue('https://github.com');
+
+    await dialog.getByLabel('Title').fill('GitLab');
+    await dialog.getByLabel('Link URL').fill('ftp://gitlab.com');
+    await dialog.getByRole('button', { name: 'Save' }).click();
+
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('alert')).toHaveText('Invalid link');
+    await expect(page.getByRole('link', { name: 'GitHub' })).toBeVisible();
+
+    await dialog.getByLabel('Link URL').fill('https://gitlab.com');
+    await dialog.getByRole('button', { name: 'Save' }).click();
+
+    await expect(dialog).toBeHidden();
+    await expect(page.getByRole('link', { name: 'GitLab' })).toBeVisible();
+    expect((await readConfig(page)).links).toEqual([
+      { id: 'l1', title: 'GitLab', url: 'https://gitlab.com' },
+    ]);
+  });
+
+  test('keeps focus in the dialog and restores it when dismissed', async ({ page }) => {
+    await seed(page, { links: [{ id: 'l1', title: 'GitHub', url: 'https://github.com' }] });
+
+    const edit = page.getByRole('button', { name: 'Edit GitHub' });
+    await edit.click();
+    const dialog = page.getByRole('dialog', { name: 'Edit link' });
+    await expect(dialog.getByLabel('Title')).toBeFocused();
+
+    const controlCount = await dialog.locator('button, input').count();
+    for (let index = 0; index < controlCount; index += 1) {
+      await page.keyboard.press('Tab');
+      const inside = await page.evaluate(
+        () => !!document.activeElement?.closest('dialog.pixel-dialog'),
+      );
+      expect(inside).toBe(true);
+    }
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(edit).toBeFocused();
+  });
+
+  test('rejects an invalid link with a pixel message dialog', async ({ page }) => {
     await seed(page);
 
     await page.getByPlaceholder('Title').fill('FTP');
     await page.getByPlaceholder('https://...').fill('ftp://example.com');
-
-    page.once('dialog', (dialog) => {
-      expect(dialog.message()).toBe('Invalid link');
-      void dialog.dismiss();
-    });
     await page.getByRole('button', { name: 'Add link' }).click();
 
+    const dialog = page.getByRole('dialog', { name: 'Invalid link' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toContainText('Use a title and an http:// or https:// address.');
+
+    await dialog.getByRole('button', { name: 'OK' }).click();
+    await expect(dialog).toBeHidden();
     await expect(page.locator('.links-list li')).toHaveCount(0);
   });
 

@@ -86,3 +86,13 @@
 - Visual review: rendered every scene × time of day × theme combination at 1280×900 and 390×844 (64 frames each) as contact sheets, plus full-size frames. Fixes that came out of it: full-height dithered gradients read as noise (now narrow transitions), lamp light cones were checkerboards (now sparse dust motes), crescent moons painted their bite into the sky (now clipped), the mountain campfire sat behind the widget column (moved left), and the UI hint glyphs had been UTF-8 mangled.
 - Tests: 76 unit tests (config migration, palettes, `coverScale`, manifest validation, scene lookup) and 16 Playwright specs (viewport coverage, scene/time/theme switching, auto mode, v1 import, reduced motion, phone layout).
 - Next: Milestone 8 pixel dialogs.
+
+## 2026-11-05 — Milestone 8: pixel dialogs
+
+- Added a reusable dialog module (`src/ui/dialog.ts`): native `<dialog>` elements opened with `showModal()`, a title, optional message, labelled fields, inline validation, cancel/confirm actions, a Tab/Shift+Tab focus trap and Escape handling. Cancelling removes the dialog and returns focus to the opener.
+- Removed the last `prompt()` and `alert()` calls. Editing a link now opens a two-field dialog with inline feedback; deleting a link asks first and interpolates its title; an invalid add shows an informational dialog instead of a blocking alert.
+- Dialog text is built with DOM APIs and `data-i18n`, so the existing live language switching also relabels open dialogs. Added EN/ES strings for edit, delete, save, cancel, OK and the invalid-link hint.
+- Pixel styling reuses the theme variables: hard 3px border, 8px hard shadow, square corners, dimmed backdrop and a bordered error box. No new dependency.
+- Tests: expanded the Playwright suite to 18 specs, covering edit + inline validation + persistence, delete cancel/confirm, the invalid-add message, the focus trap and focus restoration on Escape.
+- Visual check at 1280×900 and 390×844 in the cafe and night themes, English and Spanish.
+- Next: release v1.1.0.

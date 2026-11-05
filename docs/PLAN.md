@@ -50,11 +50,11 @@
   - [x] UI as pixel panels over the scene: centred clock/search, links and widgets as panels
   - [x] Visual review with Playwright screenshots across scene × time × theme, desktop and phone
 
-- [ ] 8. `feat/pixel-dialogs`
+- [x] 8. `feat/pixel-dialogs`
 
-  - [ ] Accessible pixel dialogs for editing a link, confirmations and messages
-  - [ ] Focus trap, Esc, labelled fields, no `prompt()` / `alert()` / `confirm()` left
-  - [ ] e2e coverage for every dialog flow
+  - [x] Accessible pixel dialogs for editing a link, confirmations and messages
+  - [x] Focus trap, Esc, labelled fields, no `prompt()` / `alert()` / `confirm()` left
+  - [x] e2e coverage for every dialog flow
 
 - [ ] Release `v1.1.0`: README screenshots, CHANGELOG, tag and release.
 
