@@ -1,6 +1,6 @@
 /*
  * Every theme is built from exactly four named colors: cream, coffee, moss, rose.
- * The scene palette in src/scene/palette.ts mirrors these values.
+ * The scene palettes are independent; the theme only tints the scene.
  */
 :root,
 [data-theme='cafe'] {
@@ -14,6 +14,7 @@
   --accent: var(--moss);
   --muted: var(--rose);
   --shadow: var(--coffee);
+  --scene-tint: #6b8f71;
 }
 
 [data-theme='forest'] {
@@ -27,6 +28,7 @@
   --accent: var(--moss);
   --muted: var(--rose);
   --shadow: var(--coffee);
+  --scene-tint: #2f4a33;
 }
 
 [data-theme='lavender'] {
@@ -40,6 +42,7 @@
   --accent: var(--moss);
   --muted: var(--rose);
   --shadow: var(--coffee);
+  --scene-tint: #8a7fa8;
 }
 
 [data-theme='night'] {
@@ -52,5 +55,6 @@
   --fg: var(--cream);
   --accent: var(--moss);
   --muted: var(--rose);
-  --shadow: var(--coffee);
+  --shadow: #05050a;
+  --scene-tint: #3a4a5b;
 }

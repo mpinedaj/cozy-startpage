@@ -1,7 +1,7 @@
 # cozy-startpage
 
-A cozy pixel-art start page for your browser: a big clock, a search box, your links, a small
-animated scene, the weather and a to-do list. No account, no backend, no analytics.
+A cozy pixel-art start page for your browser: a full-screen animated scene, a big clock, a search
+box, your links, the weather and a to-do list. No account, no backend, no analytics.
 
 **[Open the live demo →](https://mpinedaj.github.io/cozy-startpage/)**
 
@@ -12,14 +12,16 @@ animated scene, the weather and a to-do list. No account, no backend, no analyti
 - **Clock and greeting** that follow the time of day, with 12h or 24h format and an optional name.
 - **Search** with DuckDuckGo, Google, Bing or Brave, without leaving the keyboard.
 - **Links** with add, edit, delete and reorder. URLs are limited to `http` and `https`.
-- **Pixel scene** drawn on a 320×180 canvas from character matrices: mug, tree, candle or moon. It
-  follows the theme and the time of day, and it can run with ambient dust or stay perfectly still.
-- **Four themes** built from the same four colors, so everything (UI and canvas) stays coherent.
+- **Full-screen pixel scene** behind the page: four hand-coded scenes (rainy window, forest dusk,
+  cafe interior, mountain lake) built from 3–4 parallax layers, with dawn, day, dusk and night
+  palettes. All art is procedural, so it stays crisp at any size and ships no image files.
+- **Four themes** for the interface; the scene keeps its own palette and only takes a light tint from
+  the theme, so the art stays readable and the panels stay coherent.
 - **Weather** from Open-Meteo: current temperature and conditions for the city you choose. Opt-in,
   no API key, no account.
 - **To-do list** for the day: add, tick, delete, clear the finished ones.
-- **Settings** in a native dialog: name, English/Spanish, clock format, ambient particles and motion.
-  Changes apply instantly and persist.
+- **Settings** in a native dialog: name, English/Spanish, clock format, theme, scene, time of day,
+  ambient particles and motion. Changes apply instantly and persist.
 - **Backup**: export your whole setup to a JSON file and import it back on any device.
 
 ## Use it
@@ -56,13 +58,18 @@ Requires Node 20 or newer.
 | What                   | Where                                                              |
 | ---------------------- | ------------------------------------------------------------------ |
 | Colors and themes      | `src/styles/themes.css` — one block per `data-theme`               |
-| Scenes                 | `src/scene/scenes/` — one file per motif, registered in `index.ts` |
+| Scenes                 | `src/scene/scenes/` — one file per scene, registered in `index.ts` |
 | Text and languages     | `src/i18n/messages.ts`                                             |
 | Search engines         | `src/features/search/engines.ts`                                   |
 | Defaults for new users | `src/core/defaults.ts`                                             |
 
 Adding a theme means adding a block with the four palette variables (`cream`, `coffee`, `moss`,
-`rose`); the UI and the canvas both read from it.
+`rose`), the derived UI roles and a `--scene-tint`. The interface follows the theme; the scene keeps
+its own time-of-day palette and only picks up that tint.
+
+Adding a scene means adding one file in `src/scene/scenes/` with its layers and four palettes; see
+[CONTRIBUTING.md](CONTRIBUTING.md). Optional image layers can be dropped into
+`public/assets/scenes/<id>/` with a validated `manifest.json`, otherwise the procedural art is used.
 
 ## Development
 
@@ -85,7 +92,7 @@ deploys `dist` to GitHub Pages.
 ```
 src/core        config, storage, migrations, validation, import/export
 src/features    clock, search, links, tasks, weather, motion
-src/scene       engine, palette, character-matrix scenes
+src/scene       engine, palettes, dithering, layered scenes, optional image layers
 src/ui          task and weather widgets
 src/i18n        English and Spanish strings
 src/styles      base layout and themes
@@ -98,6 +105,16 @@ docs            plan, progress log and architecture decisions
 | Settings                                          | Phone                                        |
 | ------------------------------------------------- | -------------------------------------------- |
 | ![Settings dialog](docs/screenshots/settings.png) | ![Phone layout](docs/screenshots/mobile.png) |
+
+The four scenes at their signature time of day: rainy window at night, forest at dusk, cafe at day
+and mountain lake at dawn.
+
+![The four pixel scenes](docs/screenshots/scenes.png)
+
+## Credits
+
+Scene art and the favicon are original. The font and third-party services are credited in
+[CREDITS.md](CREDITS.md).
 
 ## License
 

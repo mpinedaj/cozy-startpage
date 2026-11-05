@@ -7,6 +7,7 @@ export function defaultConfig(): Config {
     name: '',
     theme: 'cafe',
     scene: 'auto',
+    sceneTime: 'auto',
     clockFormat: '24',
     searchEngine: 'duckduckgo',
     effects: true,

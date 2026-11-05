@@ -72,3 +72,17 @@
 - Rewrote the README: what it does, live demo, privacy, how to run it, where to customise, commands, structure and screenshots. Screenshots are committed under `docs/screenshots/`.
 - Accessibility pass: hidden `<h1>` for the page, `aria-live` on the weather message, and secondary text moved from 0.7/0.75 opacity to 0.85 so hints, widget metadata and completed tasks clear WCAG AA contrast.
 - First release: version 1.0.0, changelog folded into a dated section, tag pushed.
+
+## 2026-11-05 — Milestone 7: full-screen layered scenes
+
+- Replaced the compact scene widget with a full-viewport backdrop canvas. It keeps a 320×180 logical buffer, scales by the smallest integer factor that covers the viewport (`coverScale`), centres the result and crops the overflow. No non-uniform stretch, `image-rendering: pixelated` keeps every edge hard.
+- New scene system: 3–4 layers painted once into offscreen canvases with a 40 px bleed, depth-based horizontal parallax capped at 10 px, a 12 FPS accumulator, and a single static frame when motion is reduced. The loop pauses while the tab is hidden.
+- Four new full scenes replace the v1 motifs: `rainy-window`, `forest-dusk`, `cafe-interior` and `mountain-lake`. Each ships a 14-colour palette for dawn, day, dusk and night, independent from the UI theme; the theme only applies a 6% `--scene-tint` so the art keeps its own light.
+- Suns and moons are pixel discs; night variants use a clipped crescent so the bite never paints into the sky. Gradient bands use a 4×4 Bayer dither only inside a narrow transition window (`edge = 0.08`); the rest of each band stays flat.
+- Config v2: new `sceneTime` (`auto | dawn | day | dusk | night`), `normalizeScene()` accepts the new ids and maps the legacy motifs (`mug`→`cafe-interior`, `tree`→`forest-dusk`, `candle`→`rainy-window`, `moon`→`mountain-lake`). Stored v1 configs and v1 imports are migrated in place.
+- Optional image layers: `public/assets/scenes/<id>/manifest.json` is validated (safe file names, depth 0..1, frames 1..64, fps 0..24, at most 8 layers) and falls back to the procedural art. No third-party assets are shipped.
+- UI reworked as translucent pixel panels (93% panel background) over the scene: clock, greeting and search centred; links on the left; weather and tasks on the right. Mobile stacks hero → links → widgets.
+- Settings dialog now selects scene and time of day as well as theme; changes apply immediately and persist.
+- Visual review: rendered every scene × time of day × theme combination at 1280×900 and 390×844 (64 frames each) as contact sheets, plus full-size frames. Fixes that came out of it: full-height dithered gradients read as noise (now narrow transitions), lamp light cones were checkerboards (now sparse dust motes), crescent moons painted their bite into the sky (now clipped), the mountain campfire sat behind the widget column (moved left), and the UI hint glyphs had been UTF-8 mangled.
+- Tests: 76 unit tests (config migration, palettes, `coverScale`, manifest validation, scene lookup) and 16 Playwright specs (viewport coverage, scene/time/theme switching, auto mode, v1 import, reduced motion, phone layout).
+- Next: Milestone 8 pixel dialogs.

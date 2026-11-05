@@ -3,24 +3,33 @@ import './styles/themes.css';
 import '@fontsource/pixelify-sans';
 import { loadConfig, saveConfig } from './core/storage';
 import { exportConfig, importConfig } from './core/portable';
-import type { Config } from './core/types';
+import type { Config, SceneId, ThemeId, TimeOfDay } from './core/types';
 import { formatTime, getTimeOfDay } from './features/clock/timeOfDay';
 import { greetingText } from './features/clock/greeting';
 import { searchUrl } from './features/search/engines';
-import { t, type MessageKey } from './i18n';
+import { t, type Lang, type MessageKey } from './i18n';
 import { addLink, removeLink, updateLink, moveLink } from './features/links/links';
 import { prefersReducedMotion } from './features/settings/motion';
 import { SceneEngine } from './scene/engine';
-import { scenes, getScene, autoScene } from './scene/scenes';
+import { autoScene, getScene, scenes } from './scene/scenes';
 import { createTasksWidget } from './ui/tasks-widget';
 import { createWeatherWidget } from './ui/weather-widget';
 
 const config = loadConfig();
 
+// ---------------------------------------------------------------------------
+// Full-viewport pixel backdrop
+// ---------------------------------------------------------------------------
+const sceneCanvas = document.createElement('canvas');
+sceneCanvas.className = 'scene-canvas';
+sceneCanvas.setAttribute('aria-hidden', 'true');
+document.body.prepend(sceneCanvas);
+const engine = new SceneEngine(sceneCanvas);
+
 function applyTheme(): void {
   document.body.dataset.theme = config.theme;
+  engine.syncTheme();
 }
-applyTheme();
 
 const app = document.querySelector<HTMLDivElement>('#app');
 if (!app) throw new Error('app missing');
@@ -41,8 +50,8 @@ function setPlaceholder(el: HTMLInputElement, key: MessageKey): void {
   el.placeholder = t(config.language, key);
 }
 
-function setAriaLabel(el: Element, key: MessageKey): void {
-  el.setAttribute('data-i18n-aria', key);
+function setAriaLabel(el: HTMLElement, key: MessageKey): void {
+  el.dataset.i18nAria = key;
   el.setAttribute('aria-label', t(config.language, key));
 }
 
@@ -61,16 +70,15 @@ function applyLanguage(): void {
     if (key) el.setAttribute('aria-label', t(config.language, key));
   });
   renderLinks();
-  tasksWidget.render(config.language);
   weatherWidget.render(config.language);
-  updateClock();
+  tasksWidget.render(config.language);
 }
 
 // ---------------------------------------------------------------------------
-// Hero: clock, greeting, search
+// Hero: clock, greeting and search
 // ---------------------------------------------------------------------------
 const hero = document.createElement('section');
-hero.className = 'hero';
+hero.className = 'panel hero-panel';
 setAriaLabel(hero, 'heroLabel');
 
 const clockEl = document.createElement('div');
@@ -86,39 +94,42 @@ searchForm.setAttribute('role', 'search');
 
 const searchInput = document.createElement('input');
 searchInput.type = 'search';
+searchInput.name = 'q';
+searchInput.autocomplete = 'off';
 setPlaceholder(searchInput, 'searchPlaceholder');
 setAriaLabel(searchInput, 'searchQuery');
-searchForm.appendChild(searchInput);
 
 const engineSelect = document.createElement('select');
+engineSelect.id = 'search-engine';
 setAriaLabel(engineSelect, 'searchEngineLabel');
-for (const e of ['duckduckgo', 'google', 'bing', 'brave']) {
-  const o = document.createElement('option');
-  o.value = e;
-  o.textContent = e;
-  engineSelect.appendChild(o);
+for (const value of ['duckduckgo', 'google', 'bing', 'brave'] as const) {
+  const option = document.createElement('option');
+  option.value = value;
+  option.textContent = value;
+  engineSelect.appendChild(option);
 }
 engineSelect.value = config.searchEngine;
-searchForm.appendChild(engineSelect);
 
-searchForm.addEventListener('submit', (e) => {
-  e.preventDefault();
-  const q = searchInput.value.trim();
-  if (!q) return;
-  window.location.href = searchUrl(config.searchEngine, q);
+searchForm.append(searchInput, engineSelect);
+hero.append(clockEl, greetingEl, searchForm);
+
+searchForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const query = searchInput.value.trim();
+  if (!query) return;
+  window.location.href = searchUrl(config.searchEngine, query);
 });
+
 engineSelect.addEventListener('change', () => {
-  config.searchEngine = engineSelect.value as typeof config.searchEngine;
+  config.searchEngine = engineSelect.value as Config['searchEngine'];
   saveConfig(config);
 });
-
-hero.append(clockEl, greetingEl, searchForm);
 
 // ---------------------------------------------------------------------------
 // Links
 // ---------------------------------------------------------------------------
-const linksSection = document.createElement('section');
-linksSection.className = 'links';
+const linksSection = document.createElement('aside');
+linksSection.className = 'panel links-panel';
 linksSection.setAttribute('aria-labelledby', 'links-title');
 
 const linksTitle = document.createElement('h2');
@@ -134,11 +145,15 @@ const addForm = document.createElement('form');
 addForm.className = 'add-link';
 
 const titleInput = document.createElement('input');
+titleInput.type = 'text';
+titleInput.autocomplete = 'off';
+titleInput.maxLength = 40;
 setPlaceholder(titleInput, 'linkTitle');
 setAriaLabel(titleInput, 'linkTitle');
 
 const urlInput = document.createElement('input');
 urlInput.type = 'url';
+urlInput.autocomplete = 'off';
 setPlaceholder(urlInput, 'linkUrl');
 setAriaLabel(urlInput, 'linkUrlLabel');
 
@@ -151,7 +166,7 @@ linksSection.appendChild(addForm);
 
 function renderLinks(): void {
   linksList.textContent = '';
-  config.links.forEach((link) => {
+  for (const link of config.links) {
     const li = document.createElement('li');
 
     const a = document.createElement('a');
@@ -161,21 +176,26 @@ function renderLinks(): void {
     a.rel = 'noopener noreferrer';
     li.appendChild(a);
 
+    const actions = document.createElement('div');
+    actions.className = 'link-actions';
+
     const editBtn = document.createElement('button');
     editBtn.type = 'button';
-    editBtn.textContent = t(config.language, 'edit');
+    editBtn.className = 'icon-button';
+    editBtn.textContent = '✎';
     editBtn.setAttribute('aria-label', `${t(config.language, 'edit')} ${link.title}`);
     editBtn.addEventListener('click', () => {
-      const nt = prompt(t(config.language, 'linkTitle'), link.title);
-      const nu = prompt(t(config.language, 'linkUrlLabel'), link.url);
-      if (nt !== null && nu !== null) {
-        if (updateLink(config, link.id, nt, nu)) renderLinks();
+      const nextTitle = prompt(t(config.language, 'linkTitle'), link.title);
+      const nextUrl = prompt(t(config.language, 'linkUrlLabel'), link.url);
+      if (nextTitle !== null && nextUrl !== null) {
+        if (updateLink(config, link.id, nextTitle, nextUrl)) renderLinks();
         else alert(t(config.language, 'invalidLink'));
       }
     });
 
     const delBtn = document.createElement('button');
     delBtn.type = 'button';
+    delBtn.className = 'icon-button';
     delBtn.textContent = '×';
     delBtn.setAttribute('aria-label', `${t(config.language, 'delete')} ${link.title}`);
     delBtn.addEventListener('click', () => {
@@ -185,6 +205,7 @@ function renderLinks(): void {
 
     const upBtn = document.createElement('button');
     upBtn.type = 'button';
+    upBtn.className = 'icon-button';
     upBtn.textContent = '↑';
     upBtn.setAttribute('aria-label', `${t(config.language, 'moveUp')} ${link.title}`);
     upBtn.addEventListener('click', () => {
@@ -194,6 +215,7 @@ function renderLinks(): void {
 
     const downBtn = document.createElement('button');
     downBtn.type = 'button';
+    downBtn.className = 'icon-button';
     downBtn.textContent = '↓';
     downBtn.setAttribute('aria-label', `${t(config.language, 'moveDown')} ${link.title}`);
     downBtn.addEventListener('click', () => {
@@ -201,13 +223,14 @@ function renderLinks(): void {
       renderLinks();
     });
 
-    li.append(editBtn, delBtn, upBtn, downBtn);
+    actions.append(editBtn, delBtn, upBtn, downBtn);
+    li.appendChild(actions);
     linksList.appendChild(li);
-  });
+  }
 }
 
-addForm.addEventListener('submit', (e) => {
-  e.preventDefault();
+addForm.addEventListener('submit', (event) => {
+  event.preventDefault();
   if (addLink(config, titleInput.value, urlInput.value)) {
     titleInput.value = '';
     urlInput.value = '';
@@ -218,92 +241,19 @@ addForm.addEventListener('submit', (e) => {
 });
 
 // ---------------------------------------------------------------------------
-// Sidebar: scene card, weather and to-do
+// Widgets
 // ---------------------------------------------------------------------------
-const sidebar = document.createElement('aside');
-sidebar.className = 'sidebar';
-setAriaLabel(sidebar, 'widgetsLabel');
-
-const sceneCard = document.createElement('figure');
-sceneCard.className = 'scene-card';
-
-const canvas = document.createElement('canvas');
-canvas.width = 320;
-canvas.height = 180;
-canvas.className = 'scene-canvas';
-canvas.setAttribute('role', 'img');
-setAriaLabel(canvas, 'sceneAlt');
-
-const engine = new SceneEngine(canvas);
-
-const sceneControls = document.createElement('figcaption');
-sceneControls.className = 'scene-controls';
-
-const themeLabel = document.createElement('label');
-themeLabel.className = 'sr-only';
-themeLabel.htmlFor = 'theme-select';
-setText(themeLabel, 'themeLabel');
-
-const themeSelect = document.createElement('select');
-themeSelect.id = 'theme-select';
-for (const [value, key] of [
-  ['cafe', 'themeCafe'],
-  ['forest', 'themeForest'],
-  ['lavender', 'themeLavender'],
-  ['night', 'themeNight'],
-] as const) {
-  const o = document.createElement('option');
-  o.value = value;
-  setText(o, key);
-  themeSelect.appendChild(o);
-}
-themeSelect.value = config.theme;
-themeSelect.addEventListener('change', () => {
-  config.theme = themeSelect.value as typeof config.theme;
-  applyTheme();
-  saveConfig(config);
-  resolveScene();
-});
-
-const sceneLabel = document.createElement('label');
-sceneLabel.className = 'sr-only';
-sceneLabel.htmlFor = 'scene-select';
-setText(sceneLabel, 'sceneLabel');
-
-const sceneKeys: Record<string, MessageKey> = {
-  mug: 'sceneMug',
-  tree: 'sceneTree',
-  candle: 'sceneCandle',
-  moon: 'sceneMoon',
-};
-
-const sceneSelect = document.createElement('select');
-sceneSelect.id = 'scene-select';
-const autoOpt = document.createElement('option');
-autoOpt.value = 'auto';
-setText(autoOpt, 'auto');
-sceneSelect.appendChild(autoOpt);
-for (const s of scenes) {
-  const o = document.createElement('option');
-  o.value = s.id;
-  const key = sceneKeys[s.id];
-  if (key) setText(o, key);
-  else o.textContent = s.name;
-  sceneSelect.appendChild(o);
-}
-sceneSelect.value = config.scene;
-sceneSelect.addEventListener('change', () => {
-  config.scene = sceneSelect.value;
-  saveConfig(config);
-  resolveScene();
-});
-
-sceneControls.append(themeLabel, themeSelect, sceneLabel, sceneSelect);
-sceneCard.append(canvas, sceneControls);
-
 const weatherWidget = createWeatherWidget(config);
 const tasksWidget = createTasksWidget(config);
 
+const widgets = document.createElement('div');
+widgets.className = 'widgets';
+setAriaLabel(widgets, 'widgetsLabel');
+widgets.append(weatherWidget.element, tasksWidget.element);
+
+// ---------------------------------------------------------------------------
+// Settings dialog
+// ---------------------------------------------------------------------------
 const settingsBtn = document.createElement('button');
 settingsBtn.type = 'button';
 settingsBtn.className = 'settings-open';
@@ -311,15 +261,10 @@ setText(settingsBtn, 'settings');
 settingsBtn.setAttribute('aria-haspopup', 'dialog');
 settingsBtn.setAttribute('aria-controls', 'settings-dialog');
 
-const sidebarTools = document.createElement('div');
-sidebarTools.className = 'sidebar-tools';
-sidebarTools.append(settingsBtn);
+const topbar = document.createElement('div');
+topbar.className = 'topbar';
+topbar.append(settingsBtn);
 
-sidebar.append(sidebarTools, sceneCard, weatherWidget.element, tasksWidget.element);
-
-// ---------------------------------------------------------------------------
-// Settings dialog
-// ---------------------------------------------------------------------------
 const settingsDialog = document.createElement('dialog');
 settingsDialog.className = 'settings-dialog';
 settingsDialog.id = 'settings-dialog';
@@ -388,6 +333,10 @@ function createCheckboxField(
   return { field, input };
 }
 
+function pick<T extends string>(value: string, allowed: readonly T[], fallback: T): T {
+  return (allowed as readonly string[]).includes(value) ? (value as T) : fallback;
+}
+
 const nameInput = document.createElement('input');
 nameInput.id = 'setting-name';
 nameInput.type = 'text';
@@ -407,16 +356,92 @@ for (const [value, label] of [
   ['en', 'English'],
   ['es', 'Español'],
 ] as const) {
-  const o = document.createElement('option');
-  o.value = value;
-  o.textContent = label;
-  languageSelect.appendChild(o);
+  const option = document.createElement('option');
+  option.value = value;
+  option.textContent = label;
+  languageSelect.appendChild(option);
 }
 languageSelect.value = config.language;
 languageSelect.addEventListener('change', () => {
-  config.language = languageSelect.value as typeof config.language;
+  config.language = languageSelect.value as Lang;
   saveConfig(config);
   applyLanguage();
+  updateClock();
+});
+
+const themeSelect = document.createElement('select');
+themeSelect.id = 'setting-theme';
+for (const [value, key] of [
+  ['cafe', 'themeCafe'],
+  ['forest', 'themeForest'],
+  ['lavender', 'themeLavender'],
+  ['night', 'themeNight'],
+] as const) {
+  const option = document.createElement('option');
+  option.value = value;
+  setText(option, key);
+  themeSelect.appendChild(option);
+}
+themeSelect.value = config.theme;
+themeSelect.addEventListener('change', () => {
+  config.theme = pick<ThemeId>(themeSelect.value, ['cafe', 'forest', 'lavender', 'night'], 'cafe');
+  saveConfig(config);
+  applyTheme();
+  if (config.scene === 'auto') resolveScene();
+});
+
+const sceneKeys: Record<SceneId, MessageKey> = {
+  'rainy-window': 'sceneRainyWindow',
+  'forest-dusk': 'sceneForestDusk',
+  'cafe-interior': 'sceneCafeInterior',
+  'mountain-lake': 'sceneMountainLake',
+};
+
+const sceneSelect = document.createElement('select');
+sceneSelect.id = 'setting-scene';
+const autoSceneOption = document.createElement('option');
+autoSceneOption.value = 'auto';
+setText(autoSceneOption, 'auto');
+sceneSelect.appendChild(autoSceneOption);
+for (const scene of scenes) {
+  const option = document.createElement('option');
+  option.value = scene.id;
+  setText(option, sceneKeys[scene.id]);
+  sceneSelect.appendChild(option);
+}
+sceneSelect.value = config.scene;
+sceneSelect.addEventListener('change', () => {
+  config.scene = sceneSelect.value === 'auto' ? 'auto' : (sceneSelect.value as SceneId);
+  saveConfig(config);
+  resolveScene();
+});
+
+const timeSelect = document.createElement('select');
+timeSelect.id = 'setting-time';
+const timeAuto = document.createElement('option');
+timeAuto.value = 'auto';
+setText(timeAuto, 'auto');
+timeSelect.appendChild(timeAuto);
+for (const [value, key] of [
+  ['dawn', 'timeDawn'],
+  ['day', 'timeDay'],
+  ['dusk', 'timeDusk'],
+  ['night', 'timeNight'],
+] as const) {
+  const option = document.createElement('option');
+  option.value = value;
+  setText(option, key);
+  timeSelect.appendChild(option);
+}
+timeSelect.value = config.sceneTime;
+timeSelect.addEventListener('change', () => {
+  config.sceneTime = pick<Config['sceneTime']>(
+    timeSelect.value,
+    ['auto', 'dawn', 'day', 'dusk', 'night'],
+    'auto',
+  );
+  saveConfig(config);
+  applyTimeOfDay();
 });
 
 const clockSelect = document.createElement('select');
@@ -425,14 +450,14 @@ for (const [value, key] of [
   ['24', 'clock24'],
   ['12', 'clock12'],
 ] as const) {
-  const o = document.createElement('option');
-  o.value = value;
-  setText(o, key);
-  clockSelect.appendChild(o);
+  const option = document.createElement('option');
+  option.value = value;
+  setText(option, key);
+  clockSelect.appendChild(option);
 }
 clockSelect.value = config.clockFormat;
 clockSelect.addEventListener('change', () => {
-  config.clockFormat = clockSelect.value as typeof config.clockFormat;
+  config.clockFormat = clockSelect.value === '12' ? '12' : '24';
   saveConfig(config);
   updateClock();
 });
@@ -452,25 +477,23 @@ for (const [value, key] of [
   ['on', 'motionOn'],
   ['off', 'motionOff'],
 ] as const) {
-  const o = document.createElement('option');
-  o.value = value;
-  setText(o, key);
-  motionSelect.appendChild(o);
+  const option = document.createElement('option');
+  option.value = value;
+  setText(option, key);
+  motionSelect.appendChild(option);
 }
 motionSelect.value = config.reducedMotion;
 motionSelect.addEventListener('change', () => {
-  config.reducedMotion = motionSelect.value as typeof config.reducedMotion;
+  config.reducedMotion = pick<Config['reducedMotion']>(
+    motionSelect.value,
+    ['system', 'on', 'off'],
+    'system',
+  );
   saveConfig(config);
   applyMotion();
 });
 
 const weatherToggle = createCheckboxField('setting-weather', 'weatherEnableLabel');
-weatherToggle.input.checked = config.weather.enabled;
-weatherToggle.input.addEventListener('change', () => {
-  config.weather.enabled = weatherToggle.input.checked;
-  saveConfig(config);
-  weatherWidget.refresh();
-});
 
 const cityInput = document.createElement('input');
 cityInput.id = 'setting-city';
@@ -479,6 +502,14 @@ cityInput.maxLength = 64;
 cityInput.autocomplete = 'off';
 cityInput.value = config.weather.city;
 setPlaceholder(cityInput, 'weatherCityPlaceholder');
+setAriaLabel(cityInput, 'weatherCityLabel');
+
+weatherToggle.input.checked = config.weather.enabled;
+weatherToggle.input.addEventListener('change', () => {
+  config.weather.enabled = weatherToggle.input.checked;
+  saveConfig(config);
+  weatherWidget.refresh();
+});
 cityInput.addEventListener('change', () => {
   config.weather.city = cityInput.value.trim();
   saveConfig(config);
@@ -503,22 +534,20 @@ weatherGroup.append(
   weatherHint,
 );
 
-// ---------------------------------------------------------------------------
-// Backup: export and import the whole config as JSON
-// ---------------------------------------------------------------------------
 function applyConfig(next: Config): void {
   Object.assign(config, next);
   saveConfig(config);
 
   nameInput.value = config.name;
   languageSelect.value = config.language;
+  themeSelect.value = config.theme;
+  sceneSelect.value = config.scene;
+  timeSelect.value = config.sceneTime;
   clockSelect.value = config.clockFormat;
   effectsToggle.input.checked = config.effects;
   motionSelect.value = config.reducedMotion;
   weatherToggle.input.checked = config.weather.enabled;
   cityInput.value = config.weather.city;
-  themeSelect.value = config.theme;
-  sceneSelect.value = config.scene;
   engineSelect.value = config.searchEngine;
 
   applyTheme();
@@ -527,6 +556,7 @@ function applyConfig(next: Config): void {
   applyMotion();
   applyLanguage();
   weatherWidget.refresh();
+  updateClock();
 }
 
 const dataGroup = document.createElement('div');
@@ -607,6 +637,9 @@ settingsBody.className = 'settings-body';
 settingsBody.append(
   createField('nameLabel', nameInput),
   createField('languageLabel', languageSelect),
+  createField('themeLabel', themeSelect),
+  createField('sceneLabel', sceneSelect),
+  createField('timeLabel', timeSelect),
   createField('clockLabel', clockSelect),
   effectsToggle.field,
   createField('motionLabel', motionSelect),
@@ -624,19 +657,26 @@ const pageTitle = document.createElement('h1');
 pageTitle.className = 'sr-only';
 pageTitle.textContent = 'cozy startpage';
 
-root.append(pageTitle, hero, linksSection, sidebar);
-app.append(root);
+root.append(pageTitle, hero, linksSection, widgets);
+app.append(root, topbar);
 document.body.append(settingsDialog);
 
 // ---------------------------------------------------------------------------
-// Scene selection, motion preference and clock
+// Scene, time of day, motion and clock
 // ---------------------------------------------------------------------------
+function currentTimeOfDay(): TimeOfDay {
+  return config.sceneTime === 'auto' ? getTimeOfDay(new Date().getHours()) : config.sceneTime;
+}
+
+function applyTimeOfDay(): void {
+  engine.setTimeOfDay(currentTimeOfDay());
+}
+
 function resolveScene(): void {
-  const tod = getTimeOfDay(new Date().getHours());
-  engine.setTimeOfDay(tod);
-  engine.refreshPalette();
-  const sc = config.scene === 'auto' ? autoScene(config.theme) : getScene(config.scene);
-  engine.setScene(sc);
+  const scene = config.scene === 'auto' ? autoScene(config.theme) : getScene(config.scene);
+  engine.setScene(scene);
+  applyTimeOfDay();
+  engine.start();
 }
 
 const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -645,23 +685,25 @@ function applyMotion(): void {
   const reduced = prefersReducedMotion(config.reducedMotion, motionQuery.matches);
   engine.setReducedMotion(reduced);
   if (!reduced && !document.hidden) engine.start();
+  else engine.stop();
 }
 
 motionQuery.addEventListener('change', () => {
   if (config.reducedMotion === 'system') applyMotion();
 });
 
-resolveScene();
-engine.setEffects(config.effects);
-applyMotion();
-
 function updateClock(): void {
   const now = new Date();
   clockEl.textContent = formatTime(now, config.clockFormat);
   greetingEl.textContent = greetingText(now.getHours(), config.name, config.language);
-  engine.setTimeOfDay(getTimeOfDay(now.getHours()));
+  engine.setTimeOfDay(currentTimeOfDay());
 }
 
+applyTheme();
 applyLanguage();
+resolveScene();
+engine.setEffects(config.effects);
+applyMotion();
 weatherWidget.refresh();
+updateClock();
 setInterval(updateClock, 1000);

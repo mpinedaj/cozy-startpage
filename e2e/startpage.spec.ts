@@ -4,10 +4,11 @@ import type { Config } from '../src/core/types';
 const STORAGE_KEY = 'cozy-startpage:config';
 
 const baseConfig: Config = {
-  version: 1,
+  version: 2,
   name: '',
   theme: 'cafe',
   scene: 'auto',
+  sceneTime: 'auto',
   clockFormat: '24',
   searchEngine: 'duckduckgo',
   effects: true,
@@ -31,7 +32,11 @@ async function seed(page: Page, patch: Partial<Config> = {}): Promise<void> {
 }
 
 function canvasHash(page: Page): Promise<string> {
-  return page.evaluate(() => document.querySelector('canvas')?.toDataURL().slice(-96) ?? 'missing');
+  return page.evaluate(
+    () =>
+      document.querySelector<HTMLCanvasElement>('.scene-canvas')?.toDataURL().slice(-96) ??
+      'missing',
+  );
 }
 
 function readConfig(page: Page): Promise<Config> {
@@ -50,7 +55,29 @@ test.describe('start page', () => {
     await expect(page.locator('.greeting')).toContainText('Ada');
     await expect(page.getByPlaceholder('Search the web...')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Settings' })).toBeVisible();
-    await expect(page.locator('canvas')).toHaveAttribute('role', 'img');
+    await expect(page.locator('.scene-canvas')).toHaveAttribute('aria-hidden', 'true');
+  });
+
+  test('covers the viewport with an integer-scaled canvas', async ({ page }) => {
+    await seed(page);
+
+    const rect = await page.locator('.scene-canvas').evaluate((canvas) => {
+      const box = canvas.getBoundingClientRect();
+      return {
+        left: box.left,
+        top: box.top,
+        right: box.right,
+        bottom: box.bottom,
+        width: box.width,
+        height: box.height,
+      };
+    });
+
+    expect(rect.left).toBeLessThanOrEqual(0);
+    expect(rect.top).toBeLessThanOrEqual(0);
+    expect(rect.right).toBeGreaterThanOrEqual(await page.evaluate(() => innerWidth));
+    expect(rect.bottom).toBeGreaterThanOrEqual(await page.evaluate(() => innerHeight));
+    expect(rect.width / 320).toBeCloseTo(Math.round(rect.width / 320), 5);
   });
 
   test('search opens the selected engine', async ({ page }) => {
@@ -111,6 +138,47 @@ test.describe('start page', () => {
     await expect(page.locator('html')).toHaveAttribute('lang', 'es');
     await expect(page.locator('#links-title')).toHaveText('Enlaces');
     expect((await readConfig(page)).language).toBe('es');
+  });
+
+  test('changes scene, time of day and theme from settings', async ({ page }) => {
+    await seed(page, { reducedMotion: 'on' });
+    await page.waitForTimeout(250);
+    const before = await canvasHash(page);
+
+    await page.getByRole('button', { name: 'Settings' }).click();
+    await page.selectOption('#setting-scene', 'forest-dusk');
+    await page.selectOption('#setting-time', 'night');
+    await page.selectOption('#setting-theme', 'forest');
+    await page.getByRole('button', { name: 'Done' }).click();
+    await page.waitForTimeout(250);
+
+    expect(await canvasHash(page)).not.toBe(before);
+    await expect(page.locator('body')).toHaveAttribute('data-theme', 'forest');
+
+    const saved = await readConfig(page);
+    expect(saved.scene).toBe('forest-dusk');
+    expect(saved.sceneTime).toBe('night');
+    expect(saved.theme).toBe('forest');
+
+    await page.reload();
+    await page.getByRole('button', { name: 'Settings' }).click();
+    await expect(page.locator('#setting-scene')).toHaveValue('forest-dusk');
+    await expect(page.locator('#setting-time')).toHaveValue('night');
+    await expect(page.locator('#setting-theme')).toHaveValue('forest');
+  });
+
+  test('auto mode follows the chosen theme', async ({ page }) => {
+    await seed(page, { theme: 'night', scene: 'auto' });
+    await page.getByRole('button', { name: 'Settings' }).click();
+    await expect(page.locator('#setting-scene')).toHaveValue('auto');
+    await page.selectOption('#setting-theme', 'forest');
+    await page.getByRole('button', { name: 'Done' }).click();
+
+    // Auto scenes are theme-driven, so the choice must survive a reload.
+    await page.reload();
+    await page.getByRole('button', { name: 'Settings' }).click();
+    await expect(page.locator('#setting-theme')).toHaveValue('forest');
+    await expect(page.locator('#setting-scene')).toHaveValue('auto');
   });
 
   test('adds, completes and clears tasks', async ({ page }) => {
@@ -183,6 +251,7 @@ test.describe('start page', () => {
     for await (const chunk of stream) chunks.push(chunk as Buffer);
     const exported = JSON.parse(Buffer.concat(chunks).toString('utf8')) as Config;
     expect(exported.name).toBe('Ada');
+    expect(exported.version).toBe(2);
     expect(download.suggestedFilename()).toMatch(/^cozy-startpage-\d{4}-\d{2}-\d{2}\.json$/);
 
     const imported: Config = {
@@ -211,6 +280,38 @@ test.describe('start page', () => {
     await page.reload();
     expect((await readConfig(page)).name).toBe('Grace');
     await expect(page.locator('html')).toHaveAttribute('lang', 'es');
+  });
+
+  test('imports a v1 backup', async ({ page }) => {
+    await seed(page, { name: 'Ada' });
+    await page.getByRole('button', { name: 'Settings' }).click();
+
+    const v1 = {
+      version: 1,
+      name: 'Grace',
+      theme: 'night',
+      scene: 'candle',
+      clockFormat: '24',
+      searchEngine: 'duckduckgo',
+      effects: true,
+      reducedMotion: 'system',
+      language: 'en',
+      links: [],
+      tasks: [],
+      weather: { enabled: false, city: '' },
+      focusMode: false,
+    };
+    await page.setInputFiles('input[type=file]', {
+      name: 'v1.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify(v1)),
+    });
+
+    await expect(page.locator('.settings-status')).toHaveText('Settings imported.');
+    await expect(page.locator('#setting-name')).toHaveValue('Grace');
+    await expect(page.locator('#setting-scene')).toHaveValue('rainy-window');
+    await expect(page.locator('#setting-time')).toHaveValue('auto');
+    expect((await readConfig(page)).version).toBe(2);
   });
 
   test('rejects an invalid import without touching the config', async ({ page }) => {
@@ -266,6 +367,12 @@ test.describe('start page', () => {
       () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
     );
     expect(overflow).toBe(false);
+
+    const canvasCovers = await page.locator('.scene-canvas').evaluate((canvas) => {
+      const box = canvas.getBoundingClientRect();
+      return box.left <= 0 && box.top <= 0 && box.right >= innerWidth && box.bottom >= innerHeight;
+    });
+    expect(canvasCovers).toBe(true);
 
     await page.getByRole('button', { name: 'Ajustes' }).click();
     const dialogFits = await page.evaluate(() => {
