@@ -56,7 +56,7 @@
   - [x] Focus trap, Esc, labelled fields, no `prompt()` / `alert()` / `confirm()` left
   - [x] e2e coverage for every dialog flow
 
-- [ ] Release `v1.1.0`: README screenshots, CHANGELOG, tag and release.
+- [x] Release `v1.1.0`: README screenshots, CHANGELOG, tag and release.
 
 ## Version 1.2 — Personalization
 
