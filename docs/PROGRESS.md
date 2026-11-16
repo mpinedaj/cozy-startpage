@@ -101,3 +101,15 @@
 - Bumped the package to 1.1.0, dated the changelog section and refreshed all README screenshots, including link-editor and delete-confirmation shots.
 - Tagged `v1.1.0`, published the GitHub release and deployed the new build to GitHub Pages.
 - Next: Version 1.2, starting with milestone 9 (backgrounds).
+
+## 2026-11-15 — ASCII terminal redesign
+
+- Replaced the pixel-art direction with an ASCII terminal design across the whole page. `src/scene/ascii.ts` paints a 120×32 character grid for the four existing scene ids and every time of day, with two deterministic frames each. Phones get the centre 64 columns.
+- `AsciiSceneEngine` replaces the canvas engine: a fixed `<pre>` backdrop, monospace sizing from the viewport width, a 620 ms two-frame loop, a guard so the per-second clock tick does not redraw the scene, and stops while the tab is hidden, when motion is reduced or when ambient motion is off.
+- Terminal UI: dark cafe / forest / lavender / night palettes, scanline overlay, 1px solid and dashed rules, bracket buttons (`[ Add link ]`) and headings (`[ LINKS ]`), `[e] [x] [^] [v]` action icons and comment-style empty states.
+- New five-row ASCII clock in `src/ui/ascii.ts`, mirrored by a screen-reader-only text node with the real time. The 12h suffix sits beside the art.
+- Removed the canvas-era modules (`palette`, `dither`, `draw`, `assets` and the four layer scene files), the optional image-layer hook and the `@fontsource/pixelify-sans` dependency. The bundle drops from 53.8 kB JS / 13.4 kB CSS to 37.6 kB JS / 10.3 kB CSS.
+- Renamed the dialog classes from `pixel-dialog` to `ascii-dialog`; functionality, focus trap, validation and i18n are unchanged.
+- Tests: 75 unit tests (ASCII grid dimensions, printable characters, determinism, mobile crop, frame variation, clock glyphs, registry) and 20 Playwright specs (backdrop grid, ASCII icons, scene/time/theme switching, animation, reduced motion and ambient motion off, every dialog flow, phone crop).
+- Visual check at 1280×900 and 390×844 across all four themes, plus the settings and link-edit dialogs.
+- Next: milestone 9 (backgrounds) on top of the ASCII engine.

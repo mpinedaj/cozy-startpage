@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- ASCII terminal redesign: the backdrop is a 120×32 character grid with four scenes (rainy window,
+  forest dusk, cafe interior, mountain lake), four times of day and two frames of ambient motion.
+  Phones show the centre 64 columns.
+- Five-row ASCII clock with a screen-reader-only text time, and bracketed ASCII action icons.
+- Dark terminal palettes for cafe, forest, lavender and night, plus a CRT scanline overlay.
+
+### Changed
+
+- The whole interface is now terminal-styled: system monospace stack, 1px solid/dashed rules,
+  `[ label ]` buttons and headings, square corners, no shadows or rounded radii.
+- The effects setting is labelled “Ambient motion” and animates the ASCII scene between two frames.
+- Dialog classes renamed from `pixel-dialog` to `ascii-dialog`; behaviour is unchanged.
+
+### Removed
+
+- The canvas scene engine and its palette, dithering, drawing and image-layer modules.
+- The `@fontsource/pixelify-sans` dependency and bundled webfont.
+
 ## [1.1.0] - 2026-11-05
 
 Visual redesign: full-screen layered scenes, time-of-day palettes and accessible pixel dialogs.

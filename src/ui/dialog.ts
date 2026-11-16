@@ -83,7 +83,7 @@ function trapFocus(dialog: HTMLDialogElement): void {
 }
 
 /**
- * Build and open a modal pixel dialog. Resolves with the field values when the
+ * Build and open a modal ASCII dialog. Resolves with the field values when the
  * primary action succeeds, or null when the dialog is cancelled, dismissed
  * with Esc or its close button.
  */
@@ -92,18 +92,18 @@ export function openFormDialog(
   options: FormDialogOptions,
 ): Promise<DialogValues | null> {
   dialogCount += 1;
-  const titleId = `pixel-dialog-title-${dialogCount}`;
+  const titleId = `ascii-dialog-title-${dialogCount}`;
 
   const dialog = document.createElement('dialog');
-  dialog.className = 'pixel-dialog';
+  dialog.className = 'ascii-dialog';
   dialog.setAttribute('aria-labelledby', titleId);
 
   const form = document.createElement('form');
-  form.className = 'pixel-dialog-form';
+  form.className = 'ascii-dialog-form';
   form.noValidate = true;
 
   const header = document.createElement('header');
-  header.className = 'pixel-dialog-header';
+  header.className = 'ascii-dialog-header';
 
   const title = document.createElement('h2');
   title.id = titleId;
@@ -112,14 +112,14 @@ export function openFormDialog(
   const closeBtn = document.createElement('button');
   closeBtn.type = 'button';
   closeBtn.className = 'dialog-close';
-  closeBtn.textContent = '×';
+  closeBtn.textContent = '[x]';
   setAriaLabel(closeBtn, lang, 'close');
   closeBtn.addEventListener('click', () => settle(null));
 
   header.append(title, closeBtn);
 
   const body = document.createElement('div');
-  body.className = 'pixel-dialog-body';
+  body.className = 'ascii-dialog-body';
 
   if (options.messageKey) {
     const message = document.createElement('p');
@@ -137,7 +137,7 @@ export function openFormDialog(
     const fieldWrap = document.createElement('div');
     fieldWrap.className = 'field';
 
-    const inputId = `pixel-field-${dialogCount}-${field.name}`;
+    const inputId = `ascii-field-${dialogCount}-${field.name}`;
     const label = document.createElement('label');
     label.htmlFor = inputId;
     setText(label, lang, field.labelKey);
