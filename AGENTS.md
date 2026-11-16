@@ -2,15 +2,15 @@
 
 ## Project
 
-Customizable browser start page / new-tab page with a cozy pixel-art look. No backend, no analytics, no tracking, no accounts. Hosted on GitHub Pages.
+Customizable browser start page / new-tab page with a cozy ASCII terminal look. No backend, no analytics, no tracking, no accounts. Hosted on GitHub Pages.
 
 ## Stack
 
 - Vite + TypeScript (vanilla-ts), strict mode, ES modules. No frameworks.
-- DOM for UI, one full-viewport `<canvas>` behind the panels: 320x180 logical buffer, integer cover scale, centered and cropped, `image-rendering: pixelated`.
-- Plain CSS with custom properties. Themes via `data-theme` on `<body>`. Pixel shadows, `border-radius: 0`.
-- Scene art has its own 14-colour palettes per time of day; the UI theme only applies a small tint. Do not reuse theme colours for scene art.
-- Pixelify Sans self-hosted via `@fontsource/pixelify-sans`.
+- DOM for UI. The backdrop is a full-viewport `<pre>` holding a 120×32 character grid (the centre 64 columns on phones), sized to the viewport and centred.
+- Plain CSS with custom properties. Four dark terminal themes via `data-theme` on `<body>`. Square corners, 1px solid/dashed rules, bracket buttons and headings.
+- Scene art is printable ASCII generated in `src/scene/ascii.ts` for every time of day. Do not paint scene art with theme colours; the theme only colours the glyphs.
+- System monospace font stack; no webfont dependency.
 - Storage: `localStorage`, one versioned key, wrapped in try/catch.
 - Optional weather: Open-Meteo (no API key).
 - Tooling: ESLint (typescript-eslint), Prettier, Vitest, Playwright, GitHub Actions.
@@ -39,7 +39,7 @@ Customizable browser start page / new-tab page with a cozy pixel-art look. No ba
 - Never use `prompt()`, `alert()` or `confirm()`; use `src/ui/dialog.ts` for messages, confirmations and forms.
 - Sanitize link URLs (http/https only).
 - Validate imported JSON.
-- Pixel art created in code or original; credit third-party assets.
+- ASCII art created in code or original; credit third-party assets.
 
 ## Structure
 

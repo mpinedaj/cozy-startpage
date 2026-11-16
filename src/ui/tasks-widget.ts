@@ -108,7 +108,7 @@ export function createTasksWidget(config: Config): TasksWidget {
       const remove = document.createElement('button');
       remove.type = 'button';
       remove.className = 'task-delete';
-      remove.textContent = '×';
+      remove.textContent = '[x]';
       remove.setAttribute('aria-label', `${t(lang, 'deleteTask')}: ${task.text}`);
       remove.addEventListener('click', () => {
         removeTask(config, task.id);

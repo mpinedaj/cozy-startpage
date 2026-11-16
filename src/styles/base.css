@@ -1,5 +1,8 @@
 :root {
-  --font: 'Pixelify Sans', monospace;
+  --font:
+    'Cascadia Mono', 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Consolas,
+    'Liberation Mono', monospace;
+  color-scheme: dark;
 }
 
 * {
@@ -17,18 +20,44 @@ body {
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.55;
   overflow-x: hidden;
 }
 
-/* Full-viewport backdrop: sized with integer pixels by the scene engine. */
-.scene-canvas {
+/* CRT scanlines over the scene, below the panels. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgb(255 255 255 / 0.03) 0 1px,
+    transparent 1px 3px
+  );
+}
+
+/* Full-viewport ASCII backdrop, sized by the scene engine. */
+.ascii-scene {
   position: fixed;
   top: 50%;
   left: 50%;
   z-index: 0;
+  margin: 0;
   transform: translate(-50%, -50%);
+  color: var(--scene);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1;
+  letter-spacing: 0;
+  white-space: pre;
+  opacity: 0.5;
   pointer-events: none;
-  image-rendering: pixelated;
+  user-select: none;
+  text-shadow: 0 0 8px color-mix(in srgb, var(--scene) 40%, transparent);
+  mask-image: linear-gradient(to bottom, transparent, #000 18%, #000 82%, transparent);
 }
 
 button,
@@ -36,12 +65,11 @@ input,
 select,
 textarea {
   font-family: inherit;
-  border-radius: 0;
 }
 
 :focus-visible {
-  outline: 3px solid var(--accent);
-  outline-offset: 3px;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .sr-only {
@@ -57,15 +85,15 @@ textarea {
 }
 
 /* --------------------------------------------------------------------------
-   Floating panels
+   Terminal panels
    -------------------------------------------------------------------------- */
 .startpage {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   display: grid;
   grid-template-columns: minmax(0, 300px) minmax(0, 1fr) minmax(0, 320px);
   grid-template-areas: 'links hero widgets';
-  gap: 24px;
+  gap: 22px;
   align-items: center;
   min-height: 100svh;
   max-width: 1240px;
@@ -75,10 +103,36 @@ textarea {
 
 .panel,
 .widget {
-  background: var(--bg);
-  background: color-mix(in srgb, var(--bg) 93%, transparent);
-  border: 3px solid var(--fg);
-  box-shadow: 8px 8px 0 var(--shadow);
+  position: relative;
+  background: color-mix(in srgb, var(--bg) 94%, transparent);
+  border: 1px solid var(--line);
+}
+
+.panel > h2,
+.widget-head h2,
+.settings-header h2,
+.ascii-dialog-header h2 {
+  color: var(--accent);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.panel > h2::before,
+.widget-head h2::before,
+.settings-header h2::before,
+.ascii-dialog-header h2::before {
+  color: var(--muted);
+  content: '[ ';
+}
+
+.panel > h2::after,
+.widget-head h2::after,
+.settings-header h2::after,
+.ascii-dialog-header h2::after {
+  color: var(--muted);
+  content: ' ]';
 }
 
 .hero-panel {
@@ -91,41 +145,70 @@ textarea {
 
 .links-panel {
   grid-area: links;
-  padding: 18px;
+  padding: 16px;
 }
 
 .widgets {
   grid-area: widgets;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
   align-self: center;
 }
 
 .widget {
-  padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  padding: 14px;
 }
 
 /* --------------------------------------------------------------------------
    Clock and search
    -------------------------------------------------------------------------- */
 .clock {
-  font-size: clamp(4rem, 7.2vw, 6.4rem);
-  line-height: 0.85;
-  letter-spacing: 0.04em;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 10px;
+  color: var(--accent);
+}
+
+.clock-art {
+  margin: 0;
+  font-family: var(--font);
+  font-size: clamp(9px, 2.5vw, 20px);
+  line-height: 1.05;
+  letter-spacing: 0;
+  text-shadow: 0 0 10px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.clock-period {
+  padding-bottom: 0.45rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+  letter-spacing: 0.22em;
+}
+
+.clock-period:empty {
+  display: none;
 }
 
 .greeting {
-  margin-top: 6px;
-  font-size: clamp(1.2rem, 2vw, 1.7rem);
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+}
+
+.greeting::before {
+  color: var(--accent);
+  content: '> ';
 }
 
 .search {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   margin-top: 18px;
 }
 
@@ -136,21 +219,20 @@ textarea {
 
 .search select {
   flex: 0 0 auto;
+  max-width: 150px;
 }
 
 /* --------------------------------------------------------------------------
    Links
    -------------------------------------------------------------------------- */
-.links-panel h2 {
-  margin-bottom: 12px;
-  font-size: 1.5rem;
+.links-panel > h2 {
+  margin-bottom: 10px;
 }
 
 .links-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
   list-style: none;
 }
 
@@ -159,26 +241,29 @@ textarea {
   align-items: center;
   gap: 4px;
   min-width: 0;
-  padding: 5px 6px 5px 8px;
-  background: var(--bg);
-  border: 2px solid var(--fg);
-  box-shadow: 3px 3px 0 var(--shadow);
+  padding: 3px 0;
+  border-bottom: 1px dashed color-mix(in srgb, var(--line) 70%, transparent);
 }
 
 .links-list li a {
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  padding: 1px 0;
   color: var(--fg);
   text-decoration: none;
   text-overflow: ellipsis;
   white-space: nowrap;
-  border-bottom: 2px solid var(--accent);
+}
+
+.links-list li a::before {
+  color: var(--accent);
+  content: '> ';
 }
 
 .links-list li a:hover {
-  background: var(--muted);
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-style: dashed;
 }
 
 .link-actions {
@@ -187,17 +272,38 @@ textarea {
   gap: 2px;
 }
 
-.icon-button {
-  padding: 0 4px;
-  font-size: 0.95rem;
+.icon-button,
+.task-delete,
+.dialog-close {
+  padding: 0 3px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.9rem;
   line-height: 1.4;
-  box-shadow: none;
+}
+
+.icon-button::before,
+.icon-button::after,
+.task-delete::before,
+.task-delete::after,
+.dialog-close::before,
+.dialog-close::after {
+  content: none;
+}
+
+.icon-button:hover,
+.task-delete:hover,
+.dialog-close:hover {
+  border-color: transparent;
+  background: transparent;
+  color: var(--accent);
 }
 
 .add-link {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 /* --------------------------------------------------------------------------
@@ -210,25 +316,23 @@ textarea {
   gap: 8px;
 }
 
-.widget-head h2 {
-  font-size: 1.35rem;
+.widget-meta,
+.widget-empty,
+.hint {
+  color: var(--muted);
+  font-size: 0.78rem;
 }
 
-.widget-meta {
-  font-size: 0.85rem;
-  opacity: 0.85;
-}
-
-.widget-empty {
-  font-size: 0.9rem;
-  opacity: 0.85;
+.widget-empty::before {
+  color: var(--muted);
+  content: '// ';
 }
 
 /* Tasks */
 .task-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   list-style: none;
 }
 
@@ -239,11 +343,11 @@ textarea {
 }
 
 .task-check {
-  flex: 1;
-  min-width: 0;
   display: flex;
+  flex: 1;
   align-items: center;
   gap: 8px;
+  min-width: 0;
   cursor: pointer;
 }
 
@@ -252,32 +356,21 @@ textarea {
 }
 
 .task-done .task-check span {
-  opacity: 0.8;
+  color: var(--muted);
   text-decoration: line-through;
-}
-
-.task-delete,
-.task-clear,
-.weather-retry {
-  padding: 2px 8px;
-  box-shadow: none;
-  font-size: 0.85rem;
-  line-height: 1.2;
-}
-
-.task-delete {
-  font-size: 1rem;
-  padding: 0 6px;
+  text-decoration-style: dashed;
 }
 
 .task-clear,
 .weather-retry {
   align-self: flex-start;
+  padding: 2px 7px;
+  font-size: 0.78rem;
 }
 
 .task-add {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 
 .task-add input {
@@ -293,12 +386,13 @@ textarea {
 }
 
 .weather-temp {
-  font-size: 2.2rem;
+  color: var(--accent);
+  font-size: 1.9rem;
   line-height: 1;
 }
 
 .weather-desc {
-  font-size: 1rem;
+  font-size: 0.9rem;
 }
 
 /* --------------------------------------------------------------------------
@@ -306,36 +400,37 @@ textarea {
    -------------------------------------------------------------------------- */
 .topbar {
   position: fixed;
-  top: 16px;
-  right: 16px;
+  top: 14px;
+  right: 14px;
   z-index: 3;
 }
 
 .settings-open {
-  font-size: 0.95rem;
-  padding: 6px 12px;
+  padding: 4px 10px;
 }
 
-.settings-dialog {
+.settings-dialog,
+.ascii-dialog {
   width: min(92vw, 460px);
   max-height: 85vh;
   margin: auto;
   padding: 0;
   overflow: hidden;
-  border: 3px solid var(--fg);
+  border: 1px solid var(--line);
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font);
-  box-shadow: 8px 8px 0 var(--shadow);
 }
 
-.settings-dialog[open] {
+.settings-dialog[open],
+.ascii-dialog[open] {
   display: flex;
   flex-direction: column;
 }
 
-.settings-dialog::backdrop {
-  background: rgb(0 0 0 / 0.55);
+.settings-dialog::backdrop,
+.ascii-dialog::backdrop {
+  background: rgb(0 0 0 / 0.68);
 }
 
 .settings-form {
@@ -344,40 +439,40 @@ textarea {
   min-height: 0;
 }
 
-.settings-header {
+.settings-header,
+.ascii-dialog-header {
   flex: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 20px 20px 12px;
+  padding: 16px 18px 10px;
+  border-bottom: 1px dashed var(--line);
 }
 
-.settings-header h2 {
-  font-size: 1.5rem;
-}
-
-.settings-body {
+.settings-body,
+.ascii-dialog-body {
   flex: 1;
   min-height: 0;
   overflow: auto;
   overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 4px 20px 16px;
-}
-
-.dialog-close {
-  padding: 2px 8px;
-  line-height: 1;
-  box-shadow: none;
+  gap: 14px;
+  padding: 14px 18px;
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
+}
+
+.field > label {
+  color: var(--muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .settings-form input[type='text'],
@@ -388,38 +483,16 @@ textarea {
 .checkbox-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
   cursor: pointer;
-}
-
-input[type='checkbox'] {
-  appearance: none;
-  flex: 0 0 auto;
-  width: 20px;
-  height: 20px;
-  padding: 0;
-  background: var(--bg);
-  border: 2px solid var(--fg);
-  box-shadow: 2px 2px 0 var(--shadow);
-  cursor: pointer;
-}
-
-input[type='checkbox']:checked {
-  background: var(--fg);
-  box-shadow: inset 0 0 0 3px var(--bg);
-}
-
-.hint {
-  font-size: 0.85rem;
-  opacity: 0.85;
 }
 
 .settings-actions {
   flex: none;
   display: flex;
   justify-content: flex-end;
-  padding: 12px 20px 20px;
-  border-top: 2px solid var(--fg);
+  padding: 10px 18px 16px;
+  border-top: 1px dashed var(--line);
 }
 
 .settings-group {
@@ -427,11 +500,20 @@ input[type='checkbox']:checked {
   flex-direction: column;
   gap: 12px;
   padding-top: 14px;
-  border-top: 2px dashed var(--accent);
+  border-top: 1px dashed var(--line);
 }
 
 .settings-subtitle {
-  font-size: 1.1rem;
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.settings-subtitle::before {
+  color: var(--muted);
+  content: '# ';
 }
 
 .data-actions {
@@ -440,86 +522,65 @@ input[type='checkbox']:checked {
   gap: 8px;
 }
 
+.settings-status {
+  min-height: 1.2em;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.settings-status::before {
+  content: '> ';
+}
+
+/* --------------------------------------------------------------------------
+   File picker styled as a button
+   -------------------------------------------------------------------------- */
 .file-button {
   display: inline-flex;
   align-items: center;
-  padding: 6px 8px;
-  border: 2px solid var(--fg);
-  background: var(--bg);
-  box-shadow: 3px 3px 0 var(--shadow);
+  gap: 4px;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  color: var(--fg);
   cursor: pointer;
+  font-size: 0.88rem;
+  letter-spacing: 0.04em;
+}
+
+.file-button::before {
+  color: var(--muted);
+  content: '[';
+}
+
+.file-button::after {
+  color: var(--muted);
+  content: ']';
 }
 
 .file-button:hover {
-  background: var(--muted);
-}
-
-.file-button:active {
-  transform: translate(3px, 3px);
-  box-shadow: none;
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
 }
 
 .file-button:focus-within {
-  outline: 3px solid var(--accent);
-  outline-offset: 3px;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .file-button input.sr-only {
   border: 0;
-  box-shadow: none;
-}
-
-.settings-status {
-  min-height: 1.2em;
-  font-size: 0.85rem;
 }
 
 /* --------------------------------------------------------------------------
-   Pixel dialogs: link editing, confirmations and messages
+   Dialogs: link editing, confirmations and messages
    -------------------------------------------------------------------------- */
-.pixel-dialog {
-  width: min(92vw, 400px);
-  margin: auto;
-  padding: 0;
-  border: 3px solid var(--fg);
-  background: var(--bg);
-  color: var(--fg);
-  font-family: var(--font);
-  box-shadow: 8px 8px 0 var(--shadow);
+.ascii-dialog {
+  width: min(92vw, 420px);
 }
 
-.pixel-dialog[open] {
-  display: flex;
-  flex-direction: column;
-}
-
-.pixel-dialog::backdrop {
-  background: rgb(0 0 0 / 0.55);
-}
-
-.pixel-dialog-form {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.pixel-dialog-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 18px 20px 10px;
-}
-
-.pixel-dialog-header h2 {
-  font-size: 1.35rem;
-}
-
-.pixel-dialog-body {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 4px 20px 16px;
+.ascii-dialog-body {
+  overflow: visible;
 }
 
 .dialog-message {
@@ -528,12 +589,20 @@ input[type='checkbox']:checked {
   overflow-wrap: anywhere;
 }
 
+.dialog-message::before {
+  color: var(--accent);
+  content: '> ';
+}
+
 .dialog-error {
-  padding: 6px 8px;
-  border: 2px solid var(--fg);
-  box-shadow: 3px 3px 0 var(--muted);
-  font-size: 0.85rem;
-  font-weight: 700;
+  padding: 5px 8px;
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  font-size: 0.78rem;
+}
+
+.dialog-error::before {
+  content: '!! ';
 }
 
 .dialog-error[hidden] {
@@ -545,12 +614,19 @@ input[type='checkbox']:checked {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
-  padding: 12px 20px 18px;
-  border-top: 2px solid var(--fg);
+  padding: 10px 18px 16px;
+  border-top: 1px dashed var(--line);
 }
 
 .dialog-confirm.danger {
-  box-shadow: 3px 3px 0 var(--muted);
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.dialog-confirm.danger:hover {
+  border-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 16%, transparent);
+  color: var(--danger);
 }
 
 /* --------------------------------------------------------------------------
@@ -559,25 +635,86 @@ input[type='checkbox']:checked {
 input,
 select,
 button {
-  padding: 6px 8px;
-  background: var(--bg);
-  color: var(--fg);
-  border: 2px solid var(--fg);
-  box-shadow: 3px 3px 0 var(--shadow);
-  font-size: 1rem;
+  font-size: 0.88rem;
 }
 
-button {
+input:not([type='checkbox']),
+select {
+  padding: 5px 7px;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--bg) 72%, #000 28%);
+  color: var(--fg);
+}
+
+input:not([type='checkbox']):hover,
+select:hover {
+  border-color: var(--muted);
+}
+
+input::placeholder {
+  color: color-mix(in srgb, var(--muted) 75%, transparent);
+}
+
+input[type='checkbox'] {
+  appearance: none;
+  flex: 0 0 auto;
+  width: 1.05em;
+  height: 1.05em;
+  padding: 0;
+  border: 1px solid var(--line);
+  background: transparent;
   cursor: pointer;
 }
 
+input[type='checkbox']:hover {
+  border-color: var(--accent);
+}
+
+input[type='checkbox']:checked {
+  border-color: var(--accent);
+  background: var(--accent);
+  box-shadow: inset 0 0 0 3px var(--bg);
+}
+
+button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--fg);
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
+}
+
+button::before {
+  color: var(--muted);
+  content: '[';
+}
+
+button::after {
+  color: var(--muted);
+  content: ']';
+}
+
 button:hover {
-  background: var(--muted);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
 }
 
 button:active {
-  transform: translate(3px, 3px);
-  box-shadow: none;
+  transform: translateY(1px);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 /* --------------------------------------------------------------------------
@@ -616,16 +753,17 @@ button:active {
       'hero'
       'links'
       'widgets';
-    gap: 16px;
-    padding: 72px 12px 24px;
+    gap: 14px;
+    padding: 70px 12px 24px;
   }
 
   .hero-panel {
-    padding: 22px 16px 18px;
+    padding: 20px 14px 16px;
   }
 
-  .clock {
-    font-size: clamp(3.4rem, 16vw, 4.6rem);
+  .links-panel,
+  .widget {
+    padding: 12px;
   }
 }
 
@@ -636,20 +774,20 @@ button:active {
 
   .search select {
     width: 100%;
+    max-width: none;
   }
+}
 
-  .panel,
-  .widget {
-    box-shadow: 5px 5px 0 var(--shadow);
-  }
-
-  .links-panel,
-  .widget {
-    padding: 12px;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
   }
 }
 
 /* Keep the attribute authoritative over component display values. */
 [hidden] {
-  display: none;
+  display: none !important;
 }

@@ -31,11 +31,9 @@ async function seed(page: Page, patch: Partial<Config> = {}): Promise<void> {
   await page.reload();
 }
 
-function canvasHash(page: Page): Promise<string> {
+function sceneText(page: Page): Promise<string> {
   return page.evaluate(
-    () =>
-      document.querySelector<HTMLCanvasElement>('.scene-canvas')?.toDataURL().slice(-96) ??
-      'missing',
+    () => document.querySelector<HTMLElement>('.ascii-scene')?.textContent ?? '',
   );
 }
 
@@ -51,43 +49,53 @@ test.describe('start page', () => {
     await seed(page, { name: 'Ada' });
     await page.goto('/');
 
-    await expect(page.locator('#clock')).toHaveText(/^\d{2}:\d{2}$/);
+    await expect(page.locator('.clock-text')).toHaveText(/^\d{2}:\d{2}$/);
+    await expect(page.locator('.clock-art')).toContainText('_');
     await expect(page.locator('.greeting')).toContainText('Ada');
     await expect(page.getByPlaceholder('Search the web...')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Settings' })).toBeVisible();
-    await expect(page.locator('.scene-canvas')).toHaveAttribute('aria-hidden', 'true');
+    await expect(page.locator('.ascii-scene')).toHaveAttribute('aria-hidden', 'true');
   });
 
-  test('covers the viewport with an integer-scaled canvas', async ({ page }) => {
+  test('renders the backdrop as a 32-row ASCII grid', async ({ page }) => {
     await seed(page);
 
-    const rect = await page.locator('.scene-canvas').evaluate((canvas) => {
-      const box = canvas.getBoundingClientRect();
+    const info = await page.locator('.ascii-scene').evaluate((element) => {
+      const lines = (element.textContent ?? '').split('\n');
+      const style = getComputedStyle(element);
       return {
-        left: box.left,
-        top: box.top,
-        right: box.right,
-        bottom: box.bottom,
-        width: box.width,
-        height: box.height,
+        rows: lines.length,
+        columns: Math.max(...lines.map((line) => line.length)),
+        position: style.position,
+        opacity: Number(style.opacity),
       };
     });
 
-    expect(rect.left).toBeLessThanOrEqual(0);
-    expect(rect.top).toBeLessThanOrEqual(0);
-    expect(rect.right).toBeGreaterThanOrEqual(await page.evaluate(() => innerWidth));
-    expect(rect.bottom).toBeGreaterThanOrEqual(await page.evaluate(() => innerHeight));
-    expect(rect.width / 320).toBeCloseTo(Math.round(rect.width / 320), 5);
+    expect(info.rows).toBe(32);
+    expect(info.columns).toBeGreaterThan(80);
+    expect(info.columns).toBeLessThanOrEqual(120);
+    expect(info.position).toBe('fixed');
+    expect(info.opacity).toBeGreaterThan(0);
+    expect(info.opacity).toBeLessThan(1);
+  });
+
+  test('uses bracketed ASCII labels for link actions', async ({ page }) => {
+    await seed(page, { links: [{ id: 'l1', title: 'GitHub', url: 'https://github.com' }] });
+
+    await expect(page.getByRole('button', { name: 'Edit GitHub' })).toHaveText('[e]');
+    await expect(page.getByRole('button', { name: 'Delete GitHub' })).toHaveText('[x]');
+    await expect(page.getByRole('button', { name: 'Move up GitHub' })).toHaveText('[^]');
+    await expect(page.getByRole('button', { name: 'Move down GitHub' })).toHaveText('[v]');
   });
 
   test('search opens the selected engine', async ({ page }) => {
     await page.route('https://duckduckgo.com/**', (route) => route.fulfill({ body: 'ok' }));
     await seed(page);
 
-    await page.getByPlaceholder('Search the web...').fill('pixel art');
+    await page.getByPlaceholder('Search the web...').fill('ascii art');
     await page.getByPlaceholder('Search the web...').press('Enter');
 
-    await page.waitForURL('https://duckduckgo.com/?q=pixel%20art');
+    await page.waitForURL('https://duckduckgo.com/?q=ascii%20art');
   });
 
   test('adds a link, remembers it and removes it', async ({ page }) => {
@@ -117,7 +125,7 @@ test.describe('start page', () => {
     await expect(page.getByRole('link', { name: 'GitHub' })).toHaveCount(0);
   });
 
-  test('edits a link in a pixel dialog and validates inline', async ({ page }) => {
+  test('edits a link in a ASCII dialog and validates inline', async ({ page }) => {
     await seed(page, { links: [{ id: 'l1', title: 'GitHub', url: 'https://github.com' }] });
 
     await page.getByRole('button', { name: 'Edit GitHub' }).click();
@@ -156,7 +164,7 @@ test.describe('start page', () => {
     for (let index = 0; index < controlCount; index += 1) {
       await page.keyboard.press('Tab');
       const inside = await page.evaluate(
-        () => !!document.activeElement?.closest('dialog.pixel-dialog'),
+        () => !!document.activeElement?.closest('dialog.ascii-dialog'),
       );
       expect(inside).toBe(true);
     }
@@ -166,7 +174,7 @@ test.describe('start page', () => {
     await expect(edit).toBeFocused();
   });
 
-  test('rejects an invalid link with a pixel message dialog', async ({ page }) => {
+  test('rejects an invalid link with a ASCII message dialog', async ({ page }) => {
     await seed(page);
 
     await page.getByPlaceholder('Title').fill('FTP');
@@ -203,7 +211,7 @@ test.describe('start page', () => {
   test('changes scene, time of day and theme from settings', async ({ page }) => {
     await seed(page, { reducedMotion: 'on' });
     await page.waitForTimeout(250);
-    const before = await canvasHash(page);
+    const before = await sceneText(page);
 
     await page.getByRole('button', { name: 'Settings' }).click();
     await page.selectOption('#setting-scene', 'forest-dusk');
@@ -212,7 +220,7 @@ test.describe('start page', () => {
     await page.getByRole('button', { name: 'Done' }).click();
     await page.waitForTimeout(250);
 
-    expect(await canvasHash(page)).not.toBe(before);
+    expect(await sceneText(page)).not.toBe(before);
     await expect(page.locator('body')).toHaveAttribute('data-theme', 'forest');
 
     const saved = await readConfig(page);
@@ -335,7 +343,7 @@ test.describe('start page', () => {
     await expect(page.locator('.task')).toHaveCount(1);
 
     await page.getByRole('button', { name: 'Listo' }).click();
-    await expect(page.locator('.clock')).toHaveText(/^\d{1,2}:\d{2} (AM|PM)$/);
+    await expect(page.locator('.clock-text')).toHaveText(/^\d{1,2}:\d{2} (AM|PM)$/);
 
     await page.reload();
     expect((await readConfig(page)).name).toBe('Grace');
@@ -401,18 +409,27 @@ test.describe('start page', () => {
     await seed(page, { reducedMotion: 'on' });
     await page.waitForTimeout(300);
 
-    const first = await canvasHash(page);
-    await page.waitForTimeout(600);
-    expect(await canvasHash(page)).toBe(first);
+    const first = await sceneText(page);
+    await page.waitForTimeout(900);
+    expect(await sceneText(page)).toBe(first);
   });
 
   test('animates the scene when motion is allowed', async ({ page }) => {
     await seed(page, { reducedMotion: 'off' });
     await page.waitForTimeout(300);
 
-    const first = await canvasHash(page);
-    await page.waitForTimeout(700);
-    expect(await canvasHash(page)).not.toBe(first);
+    const first = await sceneText(page);
+    await page.waitForTimeout(900);
+    expect(await sceneText(page)).not.toBe(first);
+  });
+
+  test('freezes the scene when ambient motion is off', async ({ page }) => {
+    await seed(page, { reducedMotion: 'off', effects: false });
+    await page.waitForTimeout(300);
+
+    const first = await sceneText(page);
+    await page.waitForTimeout(900);
+    expect(await sceneText(page)).toBe(first);
   });
 
   test('has no horizontal overflow on a phone viewport', async ({ page }) => {
@@ -428,11 +445,15 @@ test.describe('start page', () => {
     );
     expect(overflow).toBe(false);
 
-    const canvasCovers = await page.locator('.scene-canvas').evaluate((canvas) => {
-      const box = canvas.getBoundingClientRect();
-      return box.left <= 0 && box.top <= 0 && box.right >= innerWidth && box.bottom >= innerHeight;
+    const sceneCrop = await page.locator('.ascii-scene').evaluate((element) => {
+      const lines = (element.textContent ?? '').split('\n');
+      return {
+        rows: lines.length,
+        columns: Math.max(...lines.map((line) => line.length)),
+      };
     });
-    expect(canvasCovers).toBe(true);
+    expect(sceneCrop.rows).toBe(32);
+    expect(sceneCrop.columns).toBeLessThanOrEqual(64);
 
     await page.getByRole('button', { name: 'Ajustes' }).click();
     const dialogFits = await page.evaluate(() => {

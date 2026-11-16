@@ -1,11 +1,13 @@
 import type { SceneId, ThemeId } from '../../core/types';
 import type { Scene } from '../engine';
-import { cafeInterior } from './cafe-interior';
-import { forestDusk } from './forest-dusk';
-import { mountainLake } from './mountain-lake';
-import { rainyWindow } from './rainy-window';
 
-export const scenes: Scene[] = [rainyWindow, forestDusk, cafeInterior, mountainLake];
+/** Scene ids, in settings order. The ASCII painter lives in `scene/ascii.ts`. */
+export const scenes: Scene[] = [
+  { id: 'rainy-window' },
+  { id: 'forest-dusk' },
+  { id: 'cafe-interior' },
+  { id: 'mountain-lake' },
+];
 
 const autoByTheme: Record<ThemeId, SceneId> = {
   cafe: 'cafe-interior',

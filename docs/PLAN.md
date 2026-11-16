@@ -60,20 +60,27 @@
 
 ## Version 1.2 — Personalization
 
+- [x] Design pivot: `feat/ascii-redesign`
+
+  - [x] Replace the canvas scene engine with 120×32 ASCII scenes, four times of day and two frames
+  - [x] Terminal UI: monospace stack, dark themes, scanlines, bracket buttons and headings, ASCII clock
+  - [x] Remove the canvas-era modules, the optional image-layer hook and the Pixelify Sans dependency
+  - [x] Unit and e2e coverage, ADR, docs and screenshots
+
 - [ ] 9. `feat/backgrounds`
 
-  - [ ] Background source: built-in scene, solid colour, user image or GIF
+  - [ ] Background source: built-in ASCII scene, solid colour, user image or GIF
   - [ ] Uploads in IndexedDB (8 MB cap, png / jpg / webp / gif validation, remove option)
-  - [ ] GIF through an `<img>` layer, static images through CSS/canvas with pixelated rendering
+  - [ ] GIF through an `<img>` layer, static images through CSS backgrounds
   - [ ] Readability overlay / dim slider; exports never include uploads (stated in the UI)
 
 - [ ] 10. `feat/themes-fonts`
 
-  - [ ] Custom theme editor with derived shadow and live preview
+  - [ ] Custom theme editor with derived rules and live preview
   - [ ] WCAG AA contrast warning; several saved custom themes; export/import one theme
   - [ ] New built-in themes: sakura, ocean, sunset
   - [ ] Optional auto theme by time of day
-  - [ ] Font selector (Pixelify Sans, Press Start 2P, VT323, Silkscreen) and clock size M/L/XL
+  - [ ] Clock size M/L/XL and an optional system monospace stack per theme
 
 - [ ] 11. `feat/layout-widgets`
 
@@ -85,7 +92,7 @@
 - [ ] 12. `feat/links-v2`
 
   - [ ] Link groups / folders
-  - [ ] Custom icons: emoji or a built-in pixel icon set drawn in code
+  - [ ] Custom icons: emoji or a built-in ASCII icon set drawn in code
   - [ ] Import browser bookmarks (HTML export) with validation
   - [ ] Custom search engines from a validated https URL template
   - [ ] Drag-and-drop ordering that keeps the up/down buttons for keyboard users

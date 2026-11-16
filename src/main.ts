@@ -1,6 +1,5 @@
 import './styles/base.css';
 import './styles/themes.css';
-import '@fontsource/pixelify-sans';
 import { loadConfig, saveConfig } from './core/storage';
 import { exportConfig, importConfig } from './core/portable';
 import { sanitizeUrl } from './core/validation';
@@ -11,8 +10,9 @@ import { searchUrl } from './features/search/engines';
 import { t, type Lang, type MessageKey } from './i18n';
 import { addLink, removeLink, updateLink, moveLink } from './features/links/links';
 import { prefersReducedMotion } from './features/settings/motion';
-import { SceneEngine } from './scene/engine';
+import { AsciiSceneEngine } from './scene/engine';
 import { autoScene, getScene, scenes } from './scene/scenes';
+import { asciiClock } from './ui/ascii';
 import { createTasksWidget } from './ui/tasks-widget';
 import { createWeatherWidget } from './ui/weather-widget';
 import { openConfirmDialog, openFormDialog, openMessageDialog } from './ui/dialog';
@@ -20,17 +20,16 @@ import { openConfirmDialog, openFormDialog, openMessageDialog } from './ui/dialo
 const config = loadConfig();
 
 // ---------------------------------------------------------------------------
-// Full-viewport pixel backdrop
+// Full-viewport ASCII backdrop
 // ---------------------------------------------------------------------------
-const sceneCanvas = document.createElement('canvas');
-sceneCanvas.className = 'scene-canvas';
-sceneCanvas.setAttribute('aria-hidden', 'true');
-document.body.prepend(sceneCanvas);
-const engine = new SceneEngine(sceneCanvas);
+const sceneLayer = document.createElement('pre');
+sceneLayer.className = 'ascii-scene';
+sceneLayer.setAttribute('aria-hidden', 'true');
+document.body.prepend(sceneLayer);
+const engine = new AsciiSceneEngine(sceneLayer);
 
 function applyTheme(): void {
   document.body.dataset.theme = config.theme;
-  engine.syncTheme();
 }
 
 const app = document.querySelector<HTMLDivElement>('#app');
@@ -86,6 +85,19 @@ setAriaLabel(hero, 'heroLabel');
 const clockEl = document.createElement('div');
 clockEl.className = 'clock';
 clockEl.id = 'clock';
+
+const clockArt = document.createElement('pre');
+clockArt.className = 'clock-art';
+clockArt.setAttribute('aria-hidden', 'true');
+
+const clockPeriod = document.createElement('span');
+clockPeriod.className = 'clock-period';
+clockPeriod.setAttribute('aria-hidden', 'true');
+
+const clockText = document.createElement('span');
+clockText.className = 'sr-only clock-text';
+
+clockEl.append(clockArt, clockPeriod, clockText);
 
 const greetingEl = document.createElement('div');
 greetingEl.className = 'greeting';
@@ -184,7 +196,7 @@ function renderLinks(): void {
     const editBtn = document.createElement('button');
     editBtn.type = 'button';
     editBtn.className = 'icon-button';
-    editBtn.textContent = '✎';
+    editBtn.textContent = '[e]';
     editBtn.setAttribute('aria-label', `${t(config.language, 'edit')} ${link.title}`);
     editBtn.addEventListener('click', async () => {
       const result = await openFormDialog(config.language, {
@@ -211,7 +223,7 @@ function renderLinks(): void {
     const delBtn = document.createElement('button');
     delBtn.type = 'button';
     delBtn.className = 'icon-button';
-    delBtn.textContent = '×';
+    delBtn.textContent = '[x]';
     delBtn.setAttribute('aria-label', `${t(config.language, 'delete')} ${link.title}`);
     delBtn.addEventListener('click', async () => {
       const confirmed = await openConfirmDialog(config.language, {
@@ -227,7 +239,7 @@ function renderLinks(): void {
     const upBtn = document.createElement('button');
     upBtn.type = 'button';
     upBtn.className = 'icon-button';
-    upBtn.textContent = '↑';
+    upBtn.textContent = '[^]';
     upBtn.setAttribute('aria-label', `${t(config.language, 'moveUp')} ${link.title}`);
     upBtn.addEventListener('click', () => {
       moveLink(config, link.id, -1);
@@ -237,7 +249,7 @@ function renderLinks(): void {
     const downBtn = document.createElement('button');
     downBtn.type = 'button';
     downBtn.className = 'icon-button';
-    downBtn.textContent = '↓';
+    downBtn.textContent = '[v]';
     downBtn.setAttribute('aria-label', `${t(config.language, 'moveDown')} ${link.title}`);
     downBtn.addEventListener('click', () => {
       moveLink(config, link.id, 1);
@@ -308,7 +320,7 @@ setText(settingsTitle, 'settings');
 const settingsClose = document.createElement('button');
 settingsClose.type = 'submit';
 settingsClose.className = 'dialog-close';
-settingsClose.textContent = '×';
+settingsClose.textContent = '[x]';
 setAriaLabel(settingsClose, 'close');
 
 settingsHeader.append(settingsTitle, settingsClose);
@@ -718,7 +730,11 @@ motionQuery.addEventListener('change', () => {
 
 function updateClock(): void {
   const now = new Date();
-  clockEl.textContent = formatTime(now, config.clockFormat);
+  const label = formatTime(now, config.clockFormat);
+  const [digits, period] = label.split(' ');
+  clockArt.textContent = asciiClock(digits);
+  clockPeriod.textContent = period ?? '';
+  clockText.textContent = label;
   greetingEl.textContent = greetingText(now.getHours(), config.name, config.language);
   engine.setTimeOfDay(currentTimeOfDay());
 }

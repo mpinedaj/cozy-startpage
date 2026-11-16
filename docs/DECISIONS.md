@@ -63,6 +63,8 @@ Decision:
 
 Consequences: Art code is larger, but there is no new dependency and no external request. Scenes must compose for a crop-safe centre (at 1280×900 the outer 32 buffer pixels are cropped) and for panels covering the middle band. Adding a scene means one file with four palettes and layers; themes can change without redrawing any art.
 
+**Superseded by ADR 0012**: the canvas engine was replaced by the ASCII terminal design.
+
 ## 0010 — Config v2: scene ids and time of day
 
 Context: v1 stored a motif scene id and had no way to choose a time of day. Changing the scene shapes required a storage format change.
@@ -78,3 +80,17 @@ Context: v1 edited links with `prompt()` and reported errors with `alert()`. Tho
 Decision: A single module (`src/ui/dialog.ts`) builds `<dialog>` elements on demand and opens them with `showModal()`. Form dialogs resolve `Promise<Record<string, string> | null>`, message dialogs resolve `void` and confirm dialogs resolve `boolean`. Validation runs in the submit handler and writes an inline `role="alert"` message, so a bad URL keeps the dialog open instead of opening a second one. A keydown handler wraps Tab/Shift+Tab across the dialog's controls, `cancel` (Escape) resolves as a cancel, and closing removes the element; the browser restores focus to the opener. Every label, button and message is created with DOM APIs and `data-i18n`, so live language switching also relabels an open dialog.
 
 Consequences: No dependency, no blocking native popups, and the visuals follow the theme. Dialogs are created per use, which is cheap and avoids stale values. Future flows (task confirmation, font picker, background upload) can reuse the module instead of adding another one-off overlay.
+
+## 0012 — ASCII terminal design replaces the pixel-art direction
+
+Context: the pixel-art UI (canvas scenes, Pixelify Sans, hard shadows) was coherent but tied every visual decision to a 320×180 bitmap and a webfont. The product direction moved to an ASCII/terminal aesthetic that covers the whole page, not only the backdrop: typography, panels, controls, clock and dialogs.
+
+Decision:
+
+- The backdrop is ordinary preformatted text in a `pre.ascii-scene`, painted as a 120×32 grid of printable ASCII. Four painters (rainy window, forest dusk, cafe interior, mountain lake) receive the time of day and a frame number; each combination is deterministic. On phones the scene renders the centre 64 columns so glyphs stay legible.
+- `AsciiSceneEngine` owns column selection and font sizing (fit the viewport width, capped), a two-frame loop at 620 ms, and lifecycle hooks for reduced motion, ambient motion and tab visibility. A same-time guard prevents the once-per-second clock tick from redrawing the art.
+- The interface uses a system monospace stack, four dark terminal palettes (`--bg`, `--fg`, `--accent`, `--muted`, `--line`, `--danger`, `--scene`), a scanline overlay, 1px rules, bracket buttons/headings and bracketed ASCII icons. The ASCII clock is decorative (`aria-hidden`) and paired with a screen-reader-only text time.
+- The canvas engine, its palette/dither/layer modules, the optional image-layer hook and the Pixelify Sans dependency are removed. Config keys, scene ids, time-of-day values, dialogs, i18n and storage stay compatible.
+- Art and the favicon remain original and code-drawn; no third-party assets or fonts are bundled.
+
+Consequences: The bundle is smaller and has no font request, and the visual language is consistent from backdrop to dialogs. Scene authoring is character-based and needs a printable-ASCII guarantee plus a crop-safe centre, both covered by unit tests. The image-layer hook is gone; user backgrounds return in milestone 9 as a separate feature instead of a scene-asset manifest.

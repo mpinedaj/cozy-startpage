@@ -1,7 +1,7 @@
 # cozy-startpage
 
-A cozy pixel-art start page for your browser: a full-screen animated scene, a big clock, a search
-box, your links, the weather and a to-do list. No account, no backend, no analytics.
+A cozy ASCII terminal start page for your browser: a full-screen character-art scene, a big ASCII
+clock, a search box, your links, the weather and a to-do list. No account, no backend, no analytics.
 
 **[Open the live demo →](https://mpinedaj.github.io/cozy-startpage/)**
 
@@ -11,18 +11,18 @@ box, your links, the weather and a to-do list. No account, no backend, no analyt
 
 - **Clock and greeting** that follow the time of day, with 12h or 24h format and an optional name.
 - **Search** with DuckDuckGo, Google, Bing or Brave, without leaving the keyboard.
-- **Links** with add, edit, delete and reorder. Editing uses a pixel dialog and deleting asks first.
+- **Links** with add, edit, delete and reorder. Editing uses an ASCII dialog and deleting asks first.
   URLs are limited to `http` and `https`.
-- **Full-screen pixel scene** behind the page: four hand-coded scenes (rainy window, forest dusk,
-  cafe interior, mountain lake) built from 3–4 parallax layers, with dawn, day, dusk and night
-  palettes. All art is procedural, so it stays crisp at any size and ships no image files.
-- **Four themes** for the interface; the scene keeps its own palette and only takes a light tint from
-  the theme, so the art stays readable and the panels stay coherent.
+- **Full-screen ASCII scene** behind the page: four hand-coded character scenes (rainy window, forest
+  dusk, cafe interior, mountain lake) drawn on a 120×32 grid for dawn, day, dusk and night, with two
+  frames of ambient motion. The centre 64 columns are shown on phones.
+- **Four dark terminal themes** (cafe, forest, lavender, night) with a scanline overlay; the scene
+  takes its colour from the active theme.
 - **Weather** from Open-Meteo: current temperature and conditions for the city you choose. Opt-in,
   no API key, no account.
 - **To-do list** for the day: add, tick, delete, clear the finished ones.
 - **Settings** in a native dialog: name, English/Spanish, clock format, theme, scene, time of day,
-  ambient particles and motion. Changes apply instantly and persist.
+  ambient motion and motion. Changes apply instantly and persist.
 - **Backup**: export your whole setup to a JSON file and import it back on any device.
 
 ## Use it
@@ -42,7 +42,7 @@ Everything is stored locally, so a shared computer will not see your links or ta
 - All configuration lives in one versioned `localStorage` key: `cozy-startpage:config`.
 - Weather is **off by default**. When you enable it, the page asks Open-Meteo for the city you typed
   (geocoding plus current conditions); those two requests are the only third-party traffic.
-- The Content Security Policy only allows scripts, styles and fonts from the origin, plus those two
+- The Content Security Policy only allows scripts and styles from the origin, plus those two
   Open-Meteo hosts.
 
 ## Run it locally
@@ -56,26 +56,25 @@ Requires Node 20 or newer.
 
 ## Make it yours
 
-| What                   | Where                                                              |
-| ---------------------- | ------------------------------------------------------------------ |
-| Colors and themes      | `src/styles/themes.css` — one block per `data-theme`               |
-| Scenes                 | `src/scene/scenes/` — one file per scene, registered in `index.ts` |
-| Text and languages     | `src/i18n/messages.ts`                                             |
-| Search engines         | `src/features/search/engines.ts`                                   |
-| Defaults for new users | `src/core/defaults.ts`                                             |
+| What                   | Where                                                            |
+| ---------------------- | ---------------------------------------------------------------- |
+| Colors and themes      | `src/styles/themes.css` — one block per `data-theme`             |
+| Scenes                 | `src/scene/ascii.ts` — painters, registered in `scenes/index.ts` |
+| Text and languages     | `src/i18n/messages.ts`                                           |
+| Search engines         | `src/features/search/engines.ts`                                 |
+| Defaults for new users | `src/core/defaults.ts`                                           |
 
-Adding a theme means adding a block with the four palette variables (`cream`, `coffee`, `moss`,
-`rose`), the derived UI roles and a `--scene-tint`. The interface follows the theme; the scene keeps
-its own time-of-day palette and only picks up that tint.
+Adding a theme means adding a block with `--bg`, `--fg`, `--accent`, `--muted`, `--line`, `--danger`
+and `--scene`. Keep body and muted text at WCAG AA contrast against `--bg`.
 
-Adding a scene means adding one file in `src/scene/scenes/` with its layers and four palettes; see
-[CONTRIBUTING.md](CONTRIBUTING.md). Optional image layers can be dropped into
-`public/assets/scenes/<id>/` with a validated `manifest.json`, otherwise the procedural art is used.
+Adding a scene means writing a painter in `src/scene/ascii.ts` with the shared grid helpers (`put`,
+`text`, `box`, `hline`, `vline`) and registering its id in `src/scene/scenes/index.ts`; see
+[CONTRIBUTING.md](CONTRIBUTING.md). Scenes are plain printable ASCII, deterministic per frame and
+composed for a crop-safe centre.
 
 ## Development
 
-Built with Vite, TypeScript (strict) and plain CSS. No UI framework, no runtime dependencies beyond
-the self-hosted font.
+Built with Vite, TypeScript (strict) and plain CSS. No UI framework and no runtime dependencies.
 
 ```bash
 npm run dev          # dev server
@@ -93,8 +92,8 @@ deploys `dist` to GitHub Pages.
 ```
 src/core        config, storage, migrations, validation, import/export
 src/features    clock, search, links, tasks, weather, motion
-src/scene       engine, palettes, dithering, layered scenes, optional image layers
-src/ui          task and weather widgets
+src/scene       ASCII painter, scene engine and registry
+src/ui          ASCII clock, dialogs, task and weather widgets
 src/i18n        English and Spanish strings
 src/styles      base layout and themes
 e2e             Playwright specs against the production build
@@ -114,12 +113,12 @@ docs            plan, progress log and architecture decisions
 The four scenes at their signature time of day: rainy window at night, forest at dusk, cafe at day
 and mountain lake at dawn.
 
-![The four pixel scenes](docs/screenshots/scenes.png)
+![The four ASCII scenes](docs/screenshots/scenes.png)
 
 ## Credits
 
-Scene art and the favicon are original. The font and third-party services are credited in
-[CREDITS.md](CREDITS.md).
+Scene art and the favicon are original. Third-party services are credited in
+[CREDITS.md](CREDITS.md). The interface uses a system monospace font stack, so no font is bundled.
 
 ## License
 

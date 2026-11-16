@@ -1,60 +1,45 @@
 /*
- * Every theme is built from exactly four named colors: cream, coffee, moss, rose.
- * The scene palettes are independent; the theme only tints the scene.
+ * Four terminal palettes. Each theme is a dark CRT screen: `--bg` is the glass,
+ * `--fg` the phosphor, `--accent` the highlight, `--muted` the dim text and
+ * `--scene` the ASCII art. `--line` frames the panels and controls.
  */
 :root,
 [data-theme='cafe'] {
-  --cream: #f4e9d8;
-  --coffee: #5b3a29;
-  --moss: #6b8f71;
-  --rose: #e8a7a0;
-
-  --bg: var(--cream);
-  --fg: var(--coffee);
-  --accent: var(--moss);
-  --muted: var(--rose);
-  --shadow: var(--coffee);
-  --scene-tint: #6b8f71;
+  --bg: #16100b;
+  --fg: #f2dfc0;
+  --accent: #e8b06a;
+  --muted: #b08a5f;
+  --line: #8a6a4a;
+  --danger: #e2907e;
+  --scene: #d8b483;
 }
 
 [data-theme='forest'] {
-  --cream: #e8f0e4;
-  --coffee: #2f4a33;
-  --moss: #6b8f71;
-  --rose: #c98b84;
-
-  --bg: var(--cream);
-  --fg: var(--coffee);
-  --accent: var(--moss);
-  --muted: var(--rose);
-  --shadow: var(--coffee);
-  --scene-tint: #2f4a33;
+  --bg: #07110c;
+  --fg: #cdeed6;
+  --accent: #7fd99a;
+  --muted: #5a8a6c;
+  --line: #3f7354;
+  --danger: #e2a08f;
+  --scene: #8fe0a8;
 }
 
 [data-theme='lavender'] {
-  --cream: #f0e8f7;
-  --coffee: #4a3a5b;
-  --moss: #8a7fa8;
-  --rose: #d9a7cf;
-
-  --bg: var(--cream);
-  --fg: var(--coffee);
-  --accent: var(--moss);
-  --muted: var(--rose);
-  --shadow: var(--coffee);
-  --scene-tint: #8a7fa8;
+  --bg: #110d19;
+  --fg: #e9dffb;
+  --accent: #c3a6f0;
+  --muted: #8a76ab;
+  --line: #715aa8;
+  --danger: #e59ab8;
+  --scene: #cbb3f5;
 }
 
 [data-theme='night'] {
-  --cream: #e8e0d8;
-  --coffee: #12121f;
-  --moss: #3a4a5b;
-  --rose: #e8a7a0;
-
-  --bg: var(--coffee);
-  --fg: var(--cream);
-  --accent: var(--moss);
-  --muted: var(--rose);
-  --shadow: #05050a;
-  --scene-tint: #3a4a5b;
+  --bg: #06080f;
+  --fg: #d6e2f5;
+  --accent: #86a9e8;
+  --muted: #7086ad;
+  --line: #4a6490;
+  --danger: #e8909a;
+  --scene: #9dc0f5;
 }
